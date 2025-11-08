@@ -5,12 +5,16 @@ import { RightSidebar, RightSidebarHeader, RightSidebarContent } from "./compone
 import { FavoritesList } from "./components/FavoritesList";
 import { Heart } from "lucide-react";
 
+import SwipeView from "./components/swipe-view/swipe-view";
+import * as React from "react";
+
 export default function Home() {
   return (
     <div className="w-full h-full overflow-hidden bg-zinc-50 relative">
       {/* Main Map Area */}
       <main className="w-full h-full">
         <Map />
+        <SwipeView />
       </main>
 
       {/* Right Sidebar - Overlaying the map */}
