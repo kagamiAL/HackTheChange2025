@@ -11,7 +11,7 @@ class Environment(str, Enum):
     PRODUCTION = "production"
 
 
-class Config(BaseSettings):
+class Settings(BaseSettings):
     # Environment
     environment: Environment = Environment.DEVELOPMENT
     app_name: str = "Voluntr API Backend"
@@ -28,4 +28,4 @@ class Config(BaseSettings):
         env_file_encoding = "utf-8"
 
 
-config = Config()  # type: ignore
+settings = Settings()

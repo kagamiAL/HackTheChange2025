@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.config import Environment, config
+from app.config import Environment, settings
 
 
 def create_application() -> FastAPI:
@@ -13,8 +13,8 @@ def create_application() -> FastAPI:
         to serve requests.
     """
     app = FastAPI(
-        title=config.app_name,
-        debug=config.environment == Environment.DEVELOPMENT,
+        title=settings.app_name,
+        debug=settings.environment == Environment.DEVELOPMENT,
         version="0.0.1",
         description="Voluntr API main backend",
     )
