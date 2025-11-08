@@ -19,6 +19,11 @@ def create_application() -> FastAPI:
         description="Voluntr API main backend",
     )
 
+    def health_check():
+        return {"status": "ok"}
+
+    app.get("/health", tags=["Health"])(health_check)
+
     return app
 
 
