@@ -16,16 +16,9 @@ class Settings(BaseSettings):
     environment: Environment = Environment.DEVELOPMENT
     app_name: str = "Voluntr API Backend"
 
-    # AWS DynamoDB
-    aws_region: str
-    dynamodb_endpoint_url: str
-
-    # DynamoDB Table Names
-    users_table_name: str
-
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
 
 
-settings = Settings()
+settings = Settings()  # type: ignore

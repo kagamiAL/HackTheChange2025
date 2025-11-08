@@ -1,18 +1,27 @@
 services:
-  dynamodb-local:
-    image: amazon/dynamodb-local
-    container_name: voluntr-dynamodb-local
+  postgres:
+    image: postgres:17-alpine
+    container_name: voluntr-postgres
     restart: unless-stopped
-    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
+    environment:
+      POSTGRES_DB: voluntr_dev
+      POSTGRES_USER: voluntr_user
+      POSTGRES_PASSWORD: voluntr_password
     ports:
-      - "8080:8080"
+      - "5432:5432"
     volumes:
-      - dynamodb_data:/home/dynamodblocal/data
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voluntr_user -d voluntr_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - voluntr-network
 
 volumes:
-  dynamodb_data:
+  postgres_data:
     driver: local
 
 networks:
