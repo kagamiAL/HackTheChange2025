@@ -1,0 +1,20 @@
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local
+    container_name: voluntr-dynamodb-local
+    restart: unless-stopped
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
+    ports:
+      - "8080:8080"
+    volumes:
+      - dynamodb_data:/home/dynamodblocal/data
+    networks:
+      - voluntr-network
+
+volumes:
+  dynamodb_data:
+    driver: local
+
+networks:
+  voluntr-network:
+    driver: bridge
