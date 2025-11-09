@@ -6,7 +6,7 @@ from app.dependencies.auth import get_current_user
 from app.database.postgres import get_postgres_session
 from app.services.friends import FriendsService
 from app.dependencies.users import user_lookup_service_dependency
-from app.schemas.friends import FriendRequestSchema
+from app.schemas.friends import FriendRequestSchema, AcceptFriendRequestSchema
 from app.models.user import User
 
 router = APIRouter(prefix="/friends", tags=["Friends"])
@@ -52,3 +52,17 @@ async def send_friend_request(
         )
     await friends_service.send_friend_request(sender=user, receiver=friend)
     return {"message": f"Friend request sent to user {friend.email}."}
+
+
+@router.post("/accept", status_code=status.HTTP_200_OK, summary="Accept friend request")
+async def accept_friend_request(
+    accept_request: AcceptFriendRequestSchema,
+    friends_service: FriendsService = Depends(get_friends_service),
+    user: User = Depends(get_current_user),
+):
+    """Accept a friend request."""
+    # Placeholder implementation
+    await friends_service.accept_friend_request(
+        reciever=user, request_id=accept_request.request_id
+    )
+    return {"message": "Friend request accepted."}
