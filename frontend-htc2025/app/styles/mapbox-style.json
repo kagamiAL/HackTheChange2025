@@ -729,11 +729,11 @@
     "exaggeration": 1.5
   },
   "sky": {
-    "sky-color": "#fff0f7",
+    "sky-color": "#faf5ff",
     "sky-horizon-blend": 0.1,
-    "horizon-color": "#f8d1ff",
+    "horizon-color": "#f3e8ff",
     "horizon-fog-blend": 0.2,
-    "fog-color": "#faf5ff",
+    "fog-color": "#fff0f7",
     "fog-ground-blend": 0.2,
     "atmosphere-blend": 0.8
   }

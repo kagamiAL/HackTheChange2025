@@ -83,8 +83,8 @@ const enable3D = () => {
         "sky-type": "atmosphere",
         "sky-atmosphere-sun": [0.0, 90.0],
         "sky-atmosphere-sun-intensity": 10,
-        "sky-atmosphere-color": "rgba(200, 220, 240, 1)",
-        "sky-atmosphere-halo-color": "rgba(236, 72, 153, 0.3)",
+        "sky-atmosphere-color": "#faf5ff",
+        "sky-atmosphere-halo-color": "rgba(248, 209, 255, 0.35)",
       },
     });
   } else {
