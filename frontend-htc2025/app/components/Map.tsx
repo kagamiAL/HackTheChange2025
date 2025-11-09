@@ -169,29 +169,6 @@ const enable2D = () => {
     map.current.addControl(new mapboxgl.NavigationControl());
   }, []);
 
-  // Pan camera to selected opportunity
-  useEffect(() => {
-    if (selectedOpportunity && map.current && mapLoadedRef.current) {
-      const { longitude, latitude } = selectedOpportunity.audience;
-
-      if (longitude && latitude) {
-        map.current.easeTo({
-          center: [longitude, latitude],
-          zoom: 15,
-          duration: 1000,
-          essential: true,
-        });
-      }
-    }
-  }, [selectedOpportunity]);
-
-  // React to mode changes after initial style load
-  useEffect(() => {
-    if (!map.current || !mapLoadedRef.current) return;
-    if (is3D) enable3D();
-    else enable2D();
-  }, [is3D]);
-
   const clearMarkers = () => {
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
@@ -264,7 +241,7 @@ const enable2D = () => {
               <div class="bg-background rounded-lg overflow-hidden">
                 <div class="bg-gradient-to-r from-violet-500 to-purple-600 h-1.5"></div>
                 <div class="px-4 pt-4 pb-3">
-                  <h3 class="font-semibold text-sm mb-1"><a href="${opp.url}" target="_blank" rel="noopener noreferrer" class="text-violet-700 hover:text-[#ff1493] opp-title-link duration-150">${opp.title}</a></h3>
+                  <h3 class="font-semibold text-sm mb-1">${opp.title}</h3>
                 </div>
 
                 ${
@@ -440,24 +417,6 @@ const enable2D = () => {
     <div className="w-full h-full relative">
       <div ref={mapContainer} className="w-full h-full" />
       <LocationSearch onLocationSelect={handleLocationSelect} />
-      <div className="absolute bottom-4 left-4 z-10 w-72 sm:w-80 transition-all duration-300 ease-in-out"
-        style={{
-          left: 'calc(max(1rem, env(safe-area-inset-left)) + var(--left-sidebar-width, 0px))'
-        }}>
-        <DistanceSlider />
-      </div>
-      <div className="absolute bottom-4 right-4 z-10 pointer-events-none">
-        <button
-          type="button"
-          onClick={() => setIs3D((v) => !v)}
-          className="pointer-events-auto rounded-md bg-white/90 px-3 py-2 text-sm font-medium shadow border hover:bg-white transition"
-          aria-pressed={is3D}
-          aria-label="Toggle 3D mode"
-          title={is3D ? "Switch to 2D" : "Switch to 3D"}
-        >
-          {is3D ? "3D View" : "2D View"}
-        </button>
-      </div>
     </div>
   );
 };
