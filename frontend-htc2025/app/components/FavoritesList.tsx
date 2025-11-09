@@ -2,12 +2,12 @@
 
 import React, { useState } from "react";
 import { Heart, Building2, Calendar, Clock, ExternalLink, ChevronDown } from "lucide-react";
-import { useOpportunities } from "@/app/context/OpportunityContext";
+import { useFavorites } from "@/app/context/FavoritesContext";
 import { Button } from "@/app/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function FavoritesList() {
-  const { favoritedOpportunities, removeFavorite } = useOpportunities();
+  const { favorites, removeFavorite } = useFavorites();
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const toggleExpanded = (id: number) => {
@@ -22,7 +22,7 @@ export function FavoritesList() {
     });
   };
 
-  if (favoritedOpportunities.length === 0) {
+  if (favorites.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center">
         <div className="mb-4 rounded-full bg-muted p-6">
@@ -38,7 +38,7 @@ export function FavoritesList() {
 
   return (
     <div className="divide-y divide-border">
-      {favoritedOpportunities.map((opportunity) => {
+      {favorites.map((opportunity) => {
         const isExpanded = expandedIds.has(opportunity.id);
 
         return (
