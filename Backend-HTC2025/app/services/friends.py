@@ -67,8 +67,8 @@ class FriendsService:
         )
 
         friendship = Friendship(
-            user1_id=user1_id,
-            user2_id=user2_id,
+            user_id1=user1_id,
+            user_id2=user2_id,
         )
         self._session.add(friendship)
         await self._session.commit()
