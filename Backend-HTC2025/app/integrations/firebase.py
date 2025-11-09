@@ -56,11 +56,6 @@ class FirebaseAuthClient:
     def __init__(self, app: firebase_admin.App):
         self._app = app
 
-    def create_user(self, email: str, password: str) -> auth.UserRecord:
-        """Create a new Firebase user with the given properties."""
-
-        return auth.create_user(app=self._app, email=email, password=password)
-
     def verify_token(
         self, token: str, *, check_revoked: bool = False
     ) -> dict[str, Any]:
