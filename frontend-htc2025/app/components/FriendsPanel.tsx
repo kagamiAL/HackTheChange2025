@@ -55,6 +55,18 @@ interface AuthResponsePayload {
   is_new_user?: boolean;
 }
 
+interface PendingFriendRequest {
+  id: number;
+  sender_email: string;
+  sender_name: string;
+  status: string;
+  created_at: string;
+}
+
+interface PendingRequestsResponse {
+  pending_requests: PendingFriendRequest | PendingFriendRequest[] | null;
+}
+
 async function extractMessageFromResponse(
   response: Response,
   fallback: string
@@ -197,6 +209,42 @@ async function fetchFriendsFromBackend(user: User): Promise<Friend[]> {
   }
 }
 
+async function fetchPendingRequestsFromBackend(user: User): Promise<PendingFriendRequest[]> {
+  if (!backendBaseUrl) {
+    throw new Error("BACKEND_API_URL is not configured.");
+  }
+
+  const idToken = await user.getIdToken();
+
+  const response = await fetch(`${backendBaseUrl}/friends/requests/pending`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const message = await extractMessageFromResponse(response, "Unable to load pending requests.");
+    throw new Error(message);
+  }
+
+  try {
+    const data = (await response.json()) as PendingRequestsResponse;
+    const pending = data?.pending_requests;
+    if (!pending) {
+      return [];
+    }
+
+    return Array.isArray(pending) ? pending : [pending];
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : "Unable to parse pending requests response.",
+    );
+  }
+}
+
 export function FriendsPanel() {
   const auth = useMemo(() => getFirebaseAuth(), []);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
@@ -227,6 +275,20 @@ export function FriendsPanel() {
   >("idle");
   const [friendRequestMessage, setFriendRequestMessage] = useState<
     string | null
+  >(null);
+  const [pendingRequests, setPendingRequests] = useState<PendingFriendRequest[]>([]);
+  const [pendingRequestsStatus, setPendingRequestsStatus] = useState<FriendsStatus>(
+    "idle",
+  );
+  const [pendingRequestsError, setPendingRequestsError] = useState<string | null>(null);
+  const [pendingRequestsFetchSignal, setPendingRequestsFetchSignal] = useState(0);
+  const [managingRequestIds, setManagingRequestIds] = useState<Set<number>>(new Set());
+  const [pendingActionFeedback, setPendingActionFeedback] = useState<
+    | {
+        type: "success" | "error";
+        message: string;
+      }
+    | null
   >(null);
   const backendSyncInFlight = useRef(false);
 
@@ -296,12 +358,21 @@ export function FriendsPanel() {
       setFriendRequestEmail("");
       setFriendRequestStatus("idle");
       setFriendRequestMessage(null);
+      setPendingRequests([]);
+      setPendingRequestsStatus("idle");
+      setPendingRequestsError(null);
+      setPendingRequestsFetchSignal(0);
+      setManagingRequestIds(new Set());
+      setPendingActionFeedback(null);
       return;
     }
 
     setFriendsStatus("idle");
     setFriendsError(null);
     setFriendsFetchSignal((previous) => previous + 1);
+    setPendingRequestsStatus("idle");
+    setPendingRequestsError(null);
+    setPendingRequestsFetchSignal((previous) => previous + 1);
   }, [backendAuth]);
 
   useEffect(() => {
@@ -335,6 +406,40 @@ export function FriendsPanel() {
       isMounted = false;
     };
   }, [backendAuth, friendsFetchSignal, user]);
+
+  useEffect(() => {
+    if (!backendAuth || !user || pendingRequestsFetchSignal === 0) {
+      return;
+    }
+
+    let isMounted = true;
+    setPendingRequestsStatus("loading");
+    setPendingRequestsError(null);
+
+    fetchPendingRequestsFromBackend(user)
+      .then((list) => {
+        if (!isMounted) {
+          return;
+        }
+        setPendingRequests(list);
+        setPendingRequestsStatus("success");
+      })
+      .catch((err) => {
+        if (!isMounted) {
+          return;
+        }
+        setPendingRequestsStatus("error");
+        setPendingRequestsError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load pending requests.",
+        );
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [backendAuth, pendingRequestsFetchSignal, user]);
 
   const updateField =
     (field: keyof typeof formValues) =>
@@ -464,6 +569,14 @@ export function FriendsPanel() {
     setFriendsFetchSignal((previous) => previous + 1);
   };
 
+  const retryPendingRequestsFetch = () => {
+    if (!backendAuth || !user) {
+      return;
+    }
+    setPendingActionFeedback(null);
+    setPendingRequestsFetchSignal((previous) => previous + 1);
+  };
+
   const handleFriendRequestEmailChange = (
     event: ChangeEvent<HTMLInputElement>
   ) => {
@@ -534,6 +647,67 @@ export function FriendsPanel() {
     }
   };
 
+  const managePendingRequest = async (requestId: number, accept: boolean) => {
+    if (!backendAuth || !user) {
+      return;
+    }
+
+    setPendingActionFeedback(null);
+    setManagingRequestIds((previous) => {
+      const next = new Set(previous);
+      next.add(requestId);
+      return next;
+    });
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(`${backendBaseUrl}/friends/requests/manage`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({ request_id: requestId, accept }),
+      });
+
+      if (!response.ok) {
+        const message = await extractMessageFromResponse(
+          response,
+          accept ? "Unable to accept request." : "Unable to decline request.",
+        );
+        setPendingActionFeedback({ type: "error", message });
+        return;
+      }
+
+      const successMessage = await extractMessageFromResponse(
+        response,
+        accept ? "Friend request accepted." : "Friend request declined.",
+      );
+      setPendingActionFeedback({ type: "success", message: successMessage });
+      setPendingRequestsFetchSignal((previous) => previous + 1);
+      if (accept) {
+        setFriendsFetchSignal((previous) => previous + 1);
+      }
+    } catch (err) {
+      setPendingActionFeedback({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : accept
+              ? "Unable to accept request right now."
+              : "Unable to decline request right now.",
+      });
+    } finally {
+      setManagingRequestIds((previous) => {
+        const next = new Set(previous);
+        next.delete(requestId);
+        return next;
+      });
+    }
+  };
+
   const isActionDisabled =
     isSubmitting ||
     !formValues.email ||
@@ -556,6 +730,18 @@ export function FriendsPanel() {
       backendAuth?.user.email ||
       displayName;
     const isSendingFriendRequest = friendRequestStatus === "sending";
+    const isPendingLoading =
+      pendingRequestsStatus === "loading" || pendingRequestsStatus === "idle";
+    const hasPendingRequests =
+      pendingRequestsStatus === "success" && pendingRequests.length > 0;
+    const showPendingEmptyState =
+      pendingRequestsStatus === "success" && pendingRequests.length === 0;
+    const pendingHeading =
+      pendingRequestsStatus === "error"
+        ? "Unable to load invites"
+        : hasPendingRequests
+          ? `${pendingRequests.length} awaiting action`
+          : "No pending invites";
 
     return (
       <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
@@ -592,10 +778,10 @@ export function FriendsPanel() {
         >
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Make a friend
+              Invite a friend
             </p>
             <p className="text-sm text-muted-foreground">
-              Send a friend request to start collaborating.
+              Send a request by email to start collaborating.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -631,13 +817,157 @@ export function FriendsPanel() {
           ) : null}
         </form>
 
-        <FriendsList
-          status={friendsStatus}
-          friends={friends}
-          errorMessage={friendsError}
-          isNewUser={backendAuth?.isNewUser}
-          onRetry={retryFriendsFetch}
-        />
+        <div className="space-y-4">
+          <FriendsList
+            status={friendsStatus}
+            friends={friends}
+            errorMessage={friendsError}
+            isNewUser={backendAuth?.isNewUser}
+            onRetry={retryFriendsFetch}
+          />
+
+          <section className="flex flex-col shrink-0 rounded-2xl border bg-card/70 shadow-sm">
+            <div className="flex items-center justify-between border-b px-4 py-3">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Pending requests
+                </p>
+                <h3 className="text-base font-semibold">{pendingHeading}</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="gap-1.5 text-muted-foreground"
+                  onClick={retryPendingRequestsFetch}
+                  disabled={isPendingLoading}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </Button>
+                {isPendingLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                ) : null}
+              </div>
+            </div>
+
+            {pendingActionFeedback ? (
+              <div
+                className={cn(
+                  "mx-4 mt-4 rounded-lg border px-3 py-2 text-sm",
+                  pendingActionFeedback.type === "success"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border-destructive/30 bg-destructive/5 text-destructive",
+                )}
+              >
+                {pendingActionFeedback.message}
+              </div>
+            ) : null}
+
+            {pendingRequestsStatus === "error" ? (
+              <div className="flex flex-col items-center justify-center gap-3 px-6 py-8 text-center text-sm">
+                <p className="text-destructive">
+                  {pendingRequestsError ?? "Unable to load pending requests."}
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={retryPendingRequestsFetch}
+                  disabled={isPendingLoading}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Try again
+                </Button>
+              </div>
+            ) : null}
+
+            {showPendingEmptyState ? (
+              <div className="flex flex-col items-center justify-center gap-3 px-6 py-8 text-center text-sm text-muted-foreground">
+                <p>No one is waiting on you right now.</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={retryPendingRequestsFetch}
+                  disabled={isPendingLoading}
+                >
+                  Refresh
+                </Button>
+              </div>
+            ) : null}
+
+            {hasPendingRequests ? (
+              <ul className="divide-y">
+                {pendingRequests.map((request) => {
+                  const createdAt = new Date(request.created_at);
+                  const createdAtLabel = Number.isNaN(createdAt.getTime())
+                    ? request.created_at
+                    : createdAt.toLocaleString();
+                  const isManaging = managingRequestIds.has(request.id);
+                  return (
+                    <li
+                      key={request.id}
+                      className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                    >
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium leading-tight">
+                          {request.sender_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-tight">
+                          {request.sender_email}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground leading-tight">
+                          Requested {createdAtLabel}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 sm:justify-end">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => managePendingRequest(request.id, true)}
+                          disabled={isManaging}
+                        >
+                          {isManaging ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : null}
+                          Accept
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => managePendingRequest(request.id, false)}
+                          disabled={isManaging}
+                        >
+                          {isManaging ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : null}
+                          Decline
+                        </Button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+
+            {isPendingLoading ? (
+              <div className="space-y-3 px-4 py-6 text-sm text-muted-foreground">
+                {[0, 1].map((index) => (
+                  <div
+                    key={index}
+                    className="animate-pulse rounded-lg border bg-muted/40 px-4 py-3"
+                  >
+                    Loading request…
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        </div>
       </div>
     );
   }
