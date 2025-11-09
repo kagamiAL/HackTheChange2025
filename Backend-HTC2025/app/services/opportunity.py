@@ -42,3 +42,14 @@ class OpportunityService:
         )
         result = await self._session.execute(stmt)
         return result.scalars().all()
+
+    async def get_users_for_opportunity(self, api_id: int) -> Sequence[User]:
+        """Return all users who have saved the given opportunity."""
+        stmt = (
+            select(User)
+            .join(SavedOpportunity, SavedOpportunity.user_id == User.id)
+            .join(Opportunity, Opportunity.id == SavedOpportunity.opportunity_id)
+            .where(Opportunity.api_id == api_id)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalars().all()

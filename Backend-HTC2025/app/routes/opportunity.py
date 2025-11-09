@@ -57,6 +57,29 @@ async def list_saved_opportunities(
     return payload
 
 
+@router.get(
+    "/{api_id}/saved-users",
+    response_model=OpportunitySavedUsersResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get users who saved an opportunity",
+)
+async def get_users_for_opportunity(
+    api_id: int,
+    user: User = Depends(get_current_user),
+    service: OpportunityService = Depends(opportunity_service_dependency),
+) -> OpportunitySavedUsersResponse:
+    """Return the users who saved the specified opportunity."""
+
+    _ = user  # enforce authentication via dependency
+    users = await service.get_users_for_opportunity(api_id=api_id)
+    payload = OpportunitySavedUsersResponse(
+        api_id=api_id,
+        users=[
+            OpportunitySavedUserSchema.model_validate(saved_user)
+            for saved_user in users
+        ],
+    )
+    return payload
 
 
 __all__ = ["router"]
