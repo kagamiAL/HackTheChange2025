@@ -11,16 +11,25 @@ import SwipeView from "./components/SwipeView";
 import { RightSidebar, RightSidebarContent, RightSidebarHeader } from "./components/RightSidebar";
 import { WelcomeModal } from "./components/WelcomeModal";
 import { useOpportunities } from "./context/OpportunityContext";
+import { useFavorites } from "./context/FavoritesContext";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
   const { hideRemoteOpportunities, setHideRemoteOpportunities } = useOpportunities();
+  const { reloadFavorites } = useFavorites();
   const rightSidebarTabs = [
     { id: "favorites", label: "Favorites", icon: Heart },
     { id: "friends", label: "Friends", icon: Users2 },
   ] as const;
   type TabId = (typeof rightSidebarTabs)[number]["id"];
   const [activeRightSidebarTab, setActiveRightSidebarTab] = useState<TabId>("favorites");
+
+  const handleRightSidebarTabChange = (tabId: TabId) => {
+    if (tabId === "favorites") {
+      reloadFavorites();
+    }
+    setActiveRightSidebarTab(tabId);
+  };
 
   return (
     <div className="w-full h-full overflow-hidden bg-zinc-50 relative">
@@ -80,7 +89,7 @@ export default function Home() {
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveRightSidebarTab(tab.id)}
+                  onClick={() => handleRightSidebarTabChange(tab.id)}
                   className={cn(
                     "flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors",
                     activeRightSidebarTab === tab.id
