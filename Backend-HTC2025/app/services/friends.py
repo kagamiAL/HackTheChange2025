@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, and_
 from app.models.user import User
+from app.models.friendships import Friendship
 from app.models.friendrequests import FriendRequest, Friend_Request_Status
 
 
@@ -42,4 +43,26 @@ class FriendsService:
             status=Friend_Request_Status.pending,
         )
         self._session.add(friend_request)
+        await self._session.commit()
+
+    async def accept_friend_request(self, request_id: int) -> None:
+        """Accept a friend request by its ID."""
+        stmt = select(FriendRequest).where(FriendRequest.id == request_id)
+        result = await self._session.execute(stmt)
+        friend_request = result.scalar_one_or_none()
+
+        if friend_request is None:
+            raise ValueError("Friend request not found.")
+
+        friend_request.status = Friend_Request_Status.accepted
+
+        user1_id, user2_id = sorted(
+            [friend_request.sender_id, friend_request.receiver_id]
+        )
+
+        friendship = Friendship(
+            user1_id=user1_id,
+            user2_id=user2_id,
+        )
+        self._session.add(friendship)
         await self._session.commit()
