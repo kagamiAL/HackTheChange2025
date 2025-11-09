@@ -1,5 +1,6 @@
 from enum import Enum
 from dotenv import load_dotenv
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 load_dotenv()
@@ -21,11 +22,15 @@ class Settings(BaseSettings):
     sqlalchemy_echo: bool = False
     postgres_pool_size: int = 5
     postgres_max_overflow: int = 10
-    firebase_service_account_json: str
+    firebase_service_account_json: str = Field(
+        ...,
+        description="Raw Firebase service account JSON used to initialize firebase_admin.",
+    )
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"
 
 
 settings = Settings()  # type: ignore
