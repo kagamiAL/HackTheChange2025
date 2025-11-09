@@ -89,6 +89,12 @@ const Map = () => {
         )
       )
       .addTo(map.current!);
+
+    // Add fade-in animation class
+    const markerElement = homeMarkerRef.current.getElement();
+    if (markerElement) {
+      markerElement.classList.add('marker-fade-in');
+    }
   };
 
   const fetchVolunteerOpportunities = async (
@@ -188,6 +194,12 @@ const Map = () => {
             )
           )
           .addTo(map.current!);
+
+        // Add fade-in animation class
+        const markerElement = marker.getElement();
+        if (markerElement) {
+          markerElement.classList.add('marker-fade-in');
+        }
 
         markersRef.current.push(marker);
       };
