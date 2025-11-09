@@ -1,38 +1,17 @@
 "use client";
 // Mapbox3DMap.jsx
 import React, { useEffect, useRef, useState } from "react";
-import mapboxgl from "mapbox-gl";
+import mapboxgl, { type StyleSpecification } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import customStyle from "../styles/mapbox-style.json";
+import customStyleJson from "../styles/mapbox-style.json";
 import LocationSearch from "./LocationSearch";
 import DistanceSlider from "./DistanceSlider";
 import { useOpportunities, VolunteerOpportunity } from "@/app/context/OpportunityContext";
 
+const customStyle = customStyleJson as StyleSpecification;
+
 // Use the correct env var for your setup
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
-
-interface VolunteerOpportunity {
-  id: number;
-  url: string;
-  title: string;
-  description: string;
-  remote_or_online: boolean;
-  organization: {
-    name: string;
-    logo: string | null;
-    url: string;
-  };
-  dates: {
-    start: string;
-    end: string;
-  };
-  duration: string;
-  audience: {
-    scope: string;
-    longitude?: number;
-    latitude?: number;
-  };
-}
 
 const Map = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
@@ -125,13 +104,16 @@ const Map = () => {
       antialias: true, // smoother 3D
     });
 
-    map.current.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-left");
+    const mapInstance = map.current;
+    if (!mapInstance) return;
 
-    map.current.on("style.load", () => {
+    mapInstance.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-left");
+
+    mapInstance.on("style.load", () => {
       // Check if source already exists before adding
-      if (!map.current.getSource("mapbox-dem")) {
+      if (!mapInstance.getSource("mapbox-dem")) {
         // Add 3D terrain
-        map.current.addSource("mapbox-dem", {
+        mapInstance.addSource("mapbox-dem", {
           type: "raster-dem",
           url: "mapbox://mapbox.mapbox-terrain-dem-v1",
           tileSize: 512,
@@ -139,13 +121,13 @@ const Map = () => {
         });
 
         // Enable terrain using the DEM source
-        map.current.setTerrain({ source: "mapbox-dem", exaggeration: 1.5 });
+        mapInstance.setTerrain({ source: "mapbox-dem", exaggeration: 1.5 });
       }
 
       // Check if layer already exists before adding
-      if (!map.current.getLayer("sky")) {
+      if (!mapInstance.getLayer("sky")) {
         // Add a sky layer with brand-colored atmosphere
-        map.current.addLayer({
+        mapInstance.addLayer({
           id: "sky",
           type: "sky",
           paint: {
@@ -165,7 +147,7 @@ const Map = () => {
       console.log("Map fully loaded and ready");
     });
 
-    map.current.addControl(new mapboxgl.NavigationControl());
+    mapInstance.addControl(new mapboxgl.NavigationControl());
   }, []);
 
   // Pan camera to selected opportunity
