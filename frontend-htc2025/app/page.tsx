@@ -4,17 +4,22 @@ import Map from "./components/Map";
 import { RightSidebar, RightSidebarHeader, RightSidebarContent } from "./components/RightSidebar";
 import { FavoritesList } from "./components/FavoritesList";
 import { Heart } from "lucide-react";
+import { OpportunityProvider } from "./context/OpportunityContext";
 
 import SwipeView from "./components/swipe-view/swipe-view";
 import * as React from "react";
 
-export default function Home() {
+export default function Home({ children }: { children: React.ReactNode }) {
   return (
-    <div className="w-full h-full overflow-hidden bg-zinc-50 relative">
-      {/* Main Map Area */}
-      <main className="w-full h-full">
-        <Map />
-        <SwipeView />
+    <div className="h-screen w-full overflow-hidden bg-zinc-50">
+      <OpportunityProvider>{children}</OpportunityProvider>
+      <main className="h-full w-full">
+        <div className="flex">
+          <div className="z-40 w-[30vw]">
+            <SwipeView />
+          </div>
+          <Map />
+        </div>
       </main>
 
       {/* Right Sidebar - Overlaying the map */}

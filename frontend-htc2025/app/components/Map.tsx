@@ -299,7 +299,7 @@ const Map = () => {
   };
 
   return (
-    <div className="w-full h-full relative" ref={mapContainer}>
+    <div className="w-[80vw] h-[100vh] relative" ref={mapContainer}>
       <LocationSearch onLocationSelect={handleLocationSelect} />
     </div>
   );
