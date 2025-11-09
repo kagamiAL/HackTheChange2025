@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integrations.firebase import FirebaseAuthClient
 from app.models.user import User
+from app.services.users import UserLookupService
 
 
 class AuthServiceError(Exception):
@@ -34,9 +34,11 @@ class AuthService:
         self,
         session: AsyncSession,
         firebase_auth: FirebaseAuthClient,
+        user_lookup: UserLookupService,
     ) -> None:
         self._session = session
         self._firebase_auth = firebase_auth
+        self._user_lookup = user_lookup
 
     async def sign_up(self, token: str, full_name: str) -> tuple[User, bool]:
         """Create or update a local user for the given Firebase token."""
@@ -46,7 +48,7 @@ class AuthService:
 
         normalized_name = full_name.strip()
 
-        user = await self._get_user_by_email(email)
+        user = await self._user_lookup.get_by_email(email)
         is_new_user = False
 
         if user is None:
@@ -69,7 +71,7 @@ class AuthService:
         claims = self._decode_token(token)
         email = self._extract_email(claims)
 
-        user = await self._get_user_by_email(email)
+        user = await self._user_lookup.get_by_email(email)
         if user is None:
             raise UserNotFoundError(f"No user record found for email '{email}'.")
 
@@ -87,10 +89,6 @@ class AuthService:
         if not email:
             raise MissingEmailClaimError("Firebase token is missing the email claim.")
         return email
-
-    async def _get_user_by_email(self, email: str) -> User | None:
-        result = await self._session.execute(select(User).where(User.email == email))
-        return result.scalar_one_or_none()
 
 
 __all__ = [
