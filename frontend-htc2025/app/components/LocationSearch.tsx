@@ -105,7 +105,13 @@ const LocationSearch = ({ onLocationSelect }: LocationSearchProps) => {
   };
 
   return (
-    <div ref={searchRef} className="absolute top-4 left-4 z-10 w-80">
+    <div
+      ref={searchRef}
+      className="absolute top-4 z-10 w-72 sm:w-80 transition-all duration-300 ease-in-out"
+      style={{
+        left: 'calc(max(1rem, env(safe-area-inset-left)) + var(--left-sidebar-width, 0px))'
+      }}
+    >
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input

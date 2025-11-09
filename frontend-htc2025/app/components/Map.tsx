@@ -4,6 +4,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import customStyle from "../styles/mapbox-style.json";
 import LocationSearch from "./LocationSearch";
+import DistanceSlider from "./DistanceSlider";
 import { useOpportunities, VolunteerOpportunity } from "@/app/context/OpportunityContext";
 
 // Use the correct env var for your setup
@@ -15,7 +16,7 @@ const Map = () => {
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const homeMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const mapLoadedRef = useRef(false);
-  const { setOpportunities } = useOpportunities();
+  const { setOpportunities, setSelectedOpportunity, selectedOpportunity, maxDistance } = useOpportunities();
 
   useEffect(() => {
     if (map.current) return;
@@ -69,6 +70,22 @@ const Map = () => {
     map.current.addControl(new mapboxgl.NavigationControl());
   }, []);
 
+  // Pan camera to selected opportunity
+  useEffect(() => {
+    if (selectedOpportunity && map.current && mapLoadedRef.current) {
+      const { longitude, latitude } = selectedOpportunity.audience;
+
+      if (longitude && latitude) {
+        map.current.easeTo({
+          center: [longitude, latitude],
+          zoom: 15,
+          duration: 1000,
+          essential: true,
+        });
+      }
+    }
+  }, [selectedOpportunity]);
+
   const clearMarkers = () => {
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
@@ -103,8 +120,6 @@ const Map = () => {
     postalCode: string | null
   ) => {
     try {
-      const maxDistance = 25; // 25km default
-
       // Build URL based on whether we have a postal code
       let url: string;
       if (postalCode) {
@@ -194,6 +209,11 @@ const Map = () => {
             )
           )
           .addTo(map.current!);
+
+        // Add click event to marker to select the opportunity in SwipeView
+        marker.getElement().addEventListener('click', () => {
+          setSelectedOpportunity(opp);
+        });
 
         // Add fade-in animation class
         const markerElement = marker.getElement();
@@ -301,6 +321,12 @@ const Map = () => {
   return (
     <div className="w-full h-full relative" ref={mapContainer}>
       <LocationSearch onLocationSelect={handleLocationSelect} />
+      <div className="absolute bottom-4 left-4 z-10 w-72 sm:w-80 transition-all duration-300 ease-in-out"
+        style={{
+          left: 'calc(max(1rem, env(safe-area-inset-left)) + var(--left-sidebar-width, 0px))'
+        }}>
+        <DistanceSlider />
+      </div>
     </div>
   );
 };
