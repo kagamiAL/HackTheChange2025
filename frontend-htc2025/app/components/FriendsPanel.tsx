@@ -8,12 +8,14 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
-import { Loader2, RefreshCw, Users2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 
 import { Button } from "@/app/components/ui/button";
+import { FriendsList, FriendsStatus } from "@/app/components/FriendsList";
 import { Input } from "@/components/ui/input";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
+import type { Friend, FriendsResponse } from "@/app/types/friend";
 
 const backendBaseUrl = (() => {
   const fromEnv =
@@ -73,6 +75,7 @@ async function syncBackendWithAuth(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
     },
     credentials: "include",
     body: JSON.stringify(payload),
@@ -109,6 +112,51 @@ async function syncBackendWithAuth(
   }
 }
 
+async function fetchFriendsFromBackend(user: User): Promise<Friend[]> {
+  if (!backendBaseUrl) {
+    throw new Error("BACKEND_API_URL is not configured.");
+  }
+
+  const idToken = await user.getIdToken();
+
+  const response = await fetch(`${backendBaseUrl}/friends`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    let message = "Unable to load friends.";
+    try {
+      const data = await response.json();
+      if (typeof data?.message === "string") {
+        message = data.message;
+      }
+    } catch {
+      const fallback = await response.text();
+      if (fallback) {
+        message = fallback;
+      }
+    }
+    throw new Error(message);
+  }
+
+  try {
+    const data = (await response.json()) as FriendsResponse;
+    const friends = data?.friends;
+    if (!friends) {
+      return [];
+    }
+
+    return Array.isArray(friends) ? friends : [friends];
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : "Unable to parse friends response.");
+  }
+}
+
 export function FriendsPanel() {
   const auth = useMemo(() => getFirebaseAuth(), []);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
@@ -120,6 +168,10 @@ export function FriendsPanel() {
   const [backendStatus, setBackendStatus] = useState<BackendStatus>({ state: "idle" });
   const [backendError, setBackendError] = useState<string | null>(null);
   const [backendAuth, setBackendAuth] = useState<{ user: BackendUserPayload; isNewUser: boolean } | null>(null);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friendsStatus, setFriendsStatus] = useState<FriendsStatus>("idle");
+  const [friendsError, setFriendsError] = useState<string | null>(null);
+  const [friendsFetchSignal, setFriendsFetchSignal] = useState(0);
   const backendSyncInFlight = useRef(false);
 
   useEffect(() => {
@@ -172,6 +224,50 @@ export function FriendsPanel() {
       isMounted = false;
     };
   }, [backendAuth, user]);
+
+  useEffect(() => {
+    if (!backendAuth) {
+      setFriends([]);
+      setFriendsStatus("idle");
+      setFriendsError(null);
+      setFriendsFetchSignal(0);
+      return;
+    }
+
+    setFriendsStatus("idle");
+    setFriendsError(null);
+    setFriendsFetchSignal((previous) => previous + 1);
+  }, [backendAuth]);
+
+  useEffect(() => {
+    if (!backendAuth || !user || friendsFetchSignal === 0) {
+      return;
+    }
+
+    let isMounted = true;
+    setFriendsStatus("loading");
+    setFriendsError(null);
+
+    fetchFriendsFromBackend(user)
+      .then((list) => {
+        if (!isMounted) {
+          return;
+        }
+        setFriends(list);
+        setFriendsStatus("success");
+      })
+      .catch((err) => {
+        if (!isMounted) {
+          return;
+        }
+        setFriendsStatus("error");
+        setFriendsError(err instanceof Error ? err.message : "Unable to load friends.");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [backendAuth, friendsFetchSignal, user]);
 
   const updateField =
     (field: keyof typeof formValues) => (event: ChangeEvent<HTMLInputElement>) => {
@@ -277,6 +373,13 @@ export function FriendsPanel() {
     }
   };
 
+  const retryFriendsFetch = () => {
+    if (!backendAuth || !user) {
+      return;
+    }
+    setFriendsFetchSignal((previous) => previous + 1);
+  };
+
   const isActionDisabled =
     isSubmitting ||
     !formValues.email ||
@@ -316,15 +419,13 @@ export function FriendsPanel() {
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-muted bg-muted/40 p-6 text-center">
-          <Users2 className="h-10 w-10 text-muted-foreground" />
-          <p className="mt-4 text-lg font-semibold">Friends are on the way</p>
-          <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-            {backendAuth?.isNewUser
-              ? "Welcome aboard! We just created your account in the backend."
-              : "Now that the backend trusts your token, we can pull the friends list here next."}
-          </p>
-        </div>
+        <FriendsList
+          status={friendsStatus}
+          friends={friends}
+          errorMessage={friendsError}
+          isNewUser={backendAuth?.isNewUser}
+          onRetry={retryFriendsFetch}
+        />
       </div>
     );
   }
