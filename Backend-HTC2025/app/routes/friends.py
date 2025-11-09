@@ -6,7 +6,11 @@ from app.dependencies.auth import get_current_user
 from app.database.postgres import get_postgres_session
 from app.services.friends import FriendsService
 from app.dependencies.users import user_lookup_service_dependency
-from app.schemas.friends import FriendRequestSchema, ManageFriendRequestSchema
+from app.schemas.friends import (
+    FriendRequestSchema,
+    ManageFriendRequestSchema,
+    PendingFriendRequestSchema,
+)
 from app.models.user import User
 
 router = APIRouter(prefix="/friends", tags=["Friends"])
@@ -42,13 +46,14 @@ async def get_pending_friend_requests(
     pending_requests = await friends_service.get_pending_friend_requests(user)
     return {
         "pending_requests": [
-            {
-                "id": request.id,
-                "sender_id": request.sender_id,
-                "status": request.status.value,
-                "created_at": request.created_at,
-            }
-            for request in pending_requests
+            PendingFriendRequestSchema(
+                id=request.id,
+                sender_email=sender.email,
+                sender_name=sender.full_name or sender.email,
+                status=request.status.value,
+                created_at=request.created_at.isoformat(),
+            ).model_dump()
+            for request, sender in pending_requests
         ]
     }
 

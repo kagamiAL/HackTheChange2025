@@ -12,3 +12,11 @@ class FriendRequestSchema(BaseModel):
 class ManageFriendRequestSchema(BaseModel):
     request_id: int
     accept: bool
+
+
+class PendingFriendRequestSchema(BaseModel):
+    id: int
+    sender_email: str
+    sender_name: str
+    status: str
+    created_at: str
