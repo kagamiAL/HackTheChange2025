@@ -45,9 +45,15 @@ class FriendsService:
         self._session.add(friend_request)
         await self._session.commit()
 
-    async def accept_friend_request(self, request_id: int) -> None:
+    async def accept_friend_request(self, reciever: User, request_id: int) -> None:
         """Accept a friend request by its ID."""
-        stmt = select(FriendRequest).where(FriendRequest.id == request_id)
+        stmt = select(FriendRequest).where(
+            and_(
+                FriendRequest.id == request_id,
+                FriendRequest.receiver_id == reciever.id,
+                FriendRequest.status == Friend_Request_Status.pending,
+            )
+        )
         result = await self._session.execute(stmt)
         friend_request = result.scalar_one_or_none()
 
