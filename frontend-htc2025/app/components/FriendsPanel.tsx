@@ -1,6 +1,13 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   User,
   createUserWithEmailAndPassword,
@@ -19,7 +26,9 @@ import type { Friend, FriendsResponse } from "@/app/types/friend";
 
 const backendBaseUrl = (() => {
   const fromEnv =
-    process.env.NEXT_PUBLIC_BACKEND_API_URL ?? process.env.BACKEND_API_URL ?? "";
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ??
+    process.env.BACKEND_API_URL ??
+    "";
   if (!fromEnv) {
     return "";
   }
@@ -46,18 +55,45 @@ interface AuthResponsePayload {
   is_new_user?: boolean;
 }
 
+async function extractMessageFromResponse(
+  response: Response,
+  fallback: string
+) {
+  try {
+    const data = await response.clone().json();
+    if (typeof (data as { message?: string })?.message === "string") {
+      return data.message;
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    const text = await response.clone().text();
+    if (text) {
+      return text;
+    }
+  } catch {
+    // ignore
+  }
+
+  return fallback;
+}
+
 async function syncBackendWithAuth(
   mode: AuthMode,
   user: User,
-  fullName?: string,
+  fullName?: string
 ): Promise<AuthResponsePayload> {
   if (!backendBaseUrl) {
     throw new Error(
-      "BACKEND_API_URL is not configured. Set NEXT_PUBLIC_BACKEND_API_URL (or BACKEND_API_URL) before logging in.",
+      "BACKEND_API_URL is not configured. Set NEXT_PUBLIC_BACKEND_API_URL (or BACKEND_API_URL) before logging in."
     );
   }
 
-  const endpoint = `${backendBaseUrl}/auth/${mode === "signup" ? "signup" : "login"}`;
+  const endpoint = `${backendBaseUrl}/auth/${
+    mode === "signup" ? "signup" : "login"
+  }`;
   const idToken = await user.getIdToken();
 
   const payload: Record<string, string> = {
@@ -107,7 +143,7 @@ async function syncBackendWithAuth(
     throw new Error(
       error instanceof Error
         ? error.message
-        : "Unable to parse backend authentication response.",
+        : "Unable to parse backend authentication response."
     );
   }
 }
@@ -153,25 +189,45 @@ async function fetchFriendsFromBackend(user: User): Promise<Friend[]> {
 
     return Array.isArray(friends) ? friends : [friends];
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : "Unable to parse friends response.");
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Unable to parse friends response."
+    );
   }
 }
 
 export function FriendsPanel() {
   const auth = useMemo(() => getFirebaseAuth(), []);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
-  const [formValues, setFormValues] = useState({ email: "", password: "", fullName: "" });
+  const [formValues, setFormValues] = useState({
+    email: "",
+    password: "",
+    fullName: "",
+  });
   const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
-  const [backendStatus, setBackendStatus] = useState<BackendStatus>({ state: "idle" });
+  const [backendStatus, setBackendStatus] = useState<BackendStatus>({
+    state: "idle",
+  });
   const [backendError, setBackendError] = useState<string | null>(null);
-  const [backendAuth, setBackendAuth] = useState<{ user: BackendUserPayload; isNewUser: boolean } | null>(null);
+  const [backendAuth, setBackendAuth] = useState<{
+    user: BackendUserPayload;
+    isNewUser: boolean;
+  } | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [friendsStatus, setFriendsStatus] = useState<FriendsStatus>("idle");
   const [friendsError, setFriendsError] = useState<string | null>(null);
   const [friendsFetchSignal, setFriendsFetchSignal] = useState(0);
+  const [friendRequestEmail, setFriendRequestEmail] = useState("");
+  const [friendRequestStatus, setFriendRequestStatus] = useState<
+    "idle" | "sending" | "success" | "error"
+  >("idle");
+  const [friendRequestMessage, setFriendRequestMessage] = useState<
+    string | null
+  >(null);
   const backendSyncInFlight = useRef(false);
 
   useEffect(() => {
@@ -186,7 +242,12 @@ export function FriendsPanel() {
   const isSyncingBackend = backendStatus.state === "syncing";
 
   useEffect(() => {
-    if (!hasBackendConfigured || !user || backendAuth || backendSyncInFlight.current) {
+    if (
+      !hasBackendConfigured ||
+      !user ||
+      backendAuth ||
+      backendSyncInFlight.current
+    ) {
       return;
     }
 
@@ -211,7 +272,8 @@ export function FriendsPanel() {
         if (!isMounted) {
           return;
         }
-        const message = err instanceof Error ? err.message : "Unable to reach the backend.";
+        const message =
+          err instanceof Error ? err.message : "Unable to reach the backend.";
         setBackendError(message);
         setBackendStatus({ state: "idle" });
         setBackendAuth(null);
@@ -231,6 +293,9 @@ export function FriendsPanel() {
       setFriendsStatus("idle");
       setFriendsError(null);
       setFriendsFetchSignal(0);
+      setFriendRequestEmail("");
+      setFriendRequestStatus("idle");
+      setFriendRequestMessage(null);
       return;
     }
 
@@ -261,7 +326,9 @@ export function FriendsPanel() {
           return;
         }
         setFriendsStatus("error");
-        setFriendsError(err instanceof Error ? err.message : "Unable to load friends.");
+        setFriendsError(
+          err instanceof Error ? err.message : "Unable to load friends."
+        );
       });
 
     return () => {
@@ -270,7 +337,8 @@ export function FriendsPanel() {
   }, [backendAuth, friendsFetchSignal, user]);
 
   const updateField =
-    (field: keyof typeof formValues) => (event: ChangeEvent<HTMLInputElement>) => {
+    (field: keyof typeof formValues) =>
+    (event: ChangeEvent<HTMLInputElement>) => {
       setFormValues((prev) => ({ ...prev, [field]: event.target.value }));
     };
 
@@ -283,12 +351,16 @@ export function FriendsPanel() {
     }
 
     if (authMode === "signup" && !formValues.fullName.trim()) {
-      setFormError("Please share your full name so we can finish signing you up.");
+      setFormError(
+        "Please share your full name so we can finish signing you up."
+      );
       return;
     }
 
     if (!hasBackendConfigured) {
-      setFormError("Set NEXT_PUBLIC_BACKEND_API_URL (or BACKEND_API_URL) before signing in.");
+      setFormError(
+        "Set NEXT_PUBLIC_BACKEND_API_URL (or BACKEND_API_URL) before signing in."
+      );
       return;
     }
 
@@ -300,10 +372,18 @@ export function FriendsPanel() {
 
     try {
       if (authMode === "login") {
-        const credentials = await signInWithEmailAndPassword(auth, formValues.email, formValues.password);
+        const credentials = await signInWithEmailAndPassword(
+          auth,
+          formValues.email,
+          formValues.password
+        );
         createdUser = credentials.user;
       } else {
-        const credentials = await createUserWithEmailAndPassword(auth, formValues.email, formValues.password);
+        const credentials = await createUserWithEmailAndPassword(
+          auth,
+          formValues.email,
+          formValues.password
+        );
         createdUser = credentials.user;
       }
 
@@ -312,7 +392,7 @@ export function FriendsPanel() {
       const data = await syncBackendWithAuth(
         authMode,
         createdUser,
-        authMode === "signup" ? formValues.fullName : undefined,
+        authMode === "signup" ? formValues.fullName : undefined
       );
 
       setBackendAuth({
@@ -321,7 +401,8 @@ export function FriendsPanel() {
       });
       setBackendStatus({ state: "success" });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unable to finish authentication.";
+      const message =
+        err instanceof Error ? err.message : "Unable to finish authentication.";
       if (createdUser) {
         setBackendError(message);
       } else {
@@ -345,7 +426,9 @@ export function FriendsPanel() {
       setBackendError(null);
       setBackendAuth(null);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Unable to sign out right now.");
+      setFormError(
+        err instanceof Error ? err.message : "Unable to sign out right now."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -367,7 +450,8 @@ export function FriendsPanel() {
         isNewUser: Boolean(data.is_new_user),
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unable to reach the backend.";
+      const message =
+        err instanceof Error ? err.message : "Unable to reach the backend.";
       setBackendError(message);
       setBackendStatus({ state: "idle" });
     }
@@ -378,6 +462,76 @@ export function FriendsPanel() {
       return;
     }
     setFriendsFetchSignal((previous) => previous + 1);
+  };
+
+  const handleFriendRequestEmailChange = (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    setFriendRequestEmail(event.target.value);
+    if (friendRequestStatus !== "idle") {
+      setFriendRequestStatus("idle");
+      setFriendRequestMessage(null);
+    }
+  };
+
+  const handleFriendRequestSubmit = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (!backendAuth || !user) {
+      return;
+    }
+
+    const email = friendRequestEmail.trim();
+    if (!email) {
+      setFriendRequestStatus("error");
+      setFriendRequestMessage(
+        "Please enter an email before sending a request."
+      );
+      return;
+    }
+
+    setFriendRequestStatus("sending");
+    setFriendRequestMessage(null);
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(`${backendBaseUrl}/friends/requests/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({ friend_email: email }),
+      });
+
+      if (!response.ok) {
+        const message = await extractMessageFromResponse(
+          response,
+          "Unable to send friend request."
+        );
+        setFriendRequestStatus("error");
+        setFriendRequestMessage(message);
+        return;
+      }
+
+      const successMessage = await extractMessageFromResponse(
+        response,
+        "Friend request sent."
+      );
+      setFriendRequestStatus("success");
+      setFriendRequestMessage(successMessage);
+      setFriendRequestEmail("");
+    } catch (err) {
+      setFriendRequestStatus("error");
+      setFriendRequestMessage(
+        err instanceof Error
+          ? err.message
+          : "Unable to send friend request right now."
+      );
+    }
   };
 
   const isActionDisabled =
@@ -397,14 +551,20 @@ export function FriendsPanel() {
 
   if (user && backendAuth) {
     const displayName = user.displayName ?? user.email ?? "Friend";
-    const backendName = backendAuth?.user.full_name?.trim() || backendAuth?.user.email || displayName;
+    const backendName =
+      backendAuth?.user.full_name?.trim() ||
+      backendAuth?.user.email ||
+      displayName;
+    const isSendingFriendRequest = friendRequestStatus === "sending";
 
     return (
       <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
         <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Signed in as</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Signed in as
+              </p>
               <p className="text-base font-semibold">{displayName}</p>
               {backendAuth ? (
                 <p className="text-xs text-muted-foreground">
@@ -412,12 +572,64 @@ export function FriendsPanel() {
                 </p>
               ) : null}
             </div>
-            <Button variant="outline" size="sm" onClick={handleSignOut} disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : null}
               Sign out
             </Button>
           </div>
         </div>
+
+        <form
+          onSubmit={handleFriendRequestSubmit}
+          className="space-y-3 rounded-2xl border bg-card/70 p-4 shadow-sm"
+        >
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Make a friend
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Send a friend request to start collaborating.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Input
+              type="email"
+              placeholder="friend@example.com"
+              value={friendRequestEmail}
+              onChange={handleFriendRequestEmailChange}
+              required
+            />
+            <Button
+              type="submit"
+              className="sm:w-auto"
+              disabled={isSendingFriendRequest || !friendRequestEmail.trim()}
+            >
+              {isSendingFriendRequest ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : null}
+              Send request
+            </Button>
+          </div>
+          {friendRequestMessage ? (
+            <div
+              className={cn(
+                "rounded-lg border px-3 py-2 text-sm",
+                friendRequestStatus === "success"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-destructive/30 bg-destructive/5 text-destructive"
+              )}
+            >
+              {friendRequestMessage}
+            </div>
+          ) : null}
+        </form>
 
         <FriendsList
           status={friendsStatus}
@@ -464,11 +676,13 @@ export function FriendsPanel() {
     <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Step 1</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Step 1
+          </p>
           <h3 className="text-lg font-semibold">Sign in to unlock friends</h3>
           <p className="text-sm text-muted-foreground">
-            We authenticate with Firebase first, then exchange your ID token with the backend to unlock the
-            friends API.
+            We authenticate with Firebase first, then exchange your ID token
+            with the backend to unlock the friends API.
           </p>
         </div>
         <div className="inline-flex items-center rounded-full border bg-muted/40 p-0.5 text-xs font-medium">
@@ -478,7 +692,9 @@ export function FriendsPanel() {
               type="button"
               className={cn(
                 "rounded-full px-3 py-1 capitalize transition-colors",
-                authMode === mode ? "bg-background shadow-sm" : "text-muted-foreground",
+                authMode === mode
+                  ? "bg-background shadow-sm"
+                  : "text-muted-foreground"
               )}
               onClick={() => setAuthMode(mode)}
               disabled={isSubmitting}
@@ -489,7 +705,10 @@ export function FriendsPanel() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border bg-card/70 p-5 shadow-sm">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 rounded-2xl border bg-card/70 p-5 shadow-sm"
+      >
         <div className="space-y-2">
           <label className="text-sm font-medium" htmlFor="friends-email">
             Email
@@ -528,7 +747,9 @@ export function FriendsPanel() {
           <Input
             id="friends-password"
             type="password"
-            autoComplete={authMode === "signup" ? "new-password" : "current-password"}
+            autoComplete={
+              authMode === "signup" ? "new-password" : "current-password"
+            }
             placeholder="••••••••"
             value={formValues.password}
             onChange={updateField("password")}
@@ -543,14 +764,16 @@ export function FriendsPanel() {
         ) : null}
 
         <Button type="submit" className="w-full" disabled={isActionDisabled}>
-          {isSubmitting || isSyncingBackend ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {isSubmitting || isSyncingBackend ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : null}
           {authMode === "login" ? "Log in" : "Create account"}
         </Button>
       </form>
 
       <div className="rounded-2xl border border-dashed bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
-        Your Firebase credentials stay on this device. We only transmit the ID token to the backend for
-        verification.
+        Your Firebase credentials stay on this device. We only transmit the ID
+        token to the backend for verification.
       </div>
     </div>
   );
