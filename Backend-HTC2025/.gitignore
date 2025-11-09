@@ -8,3 +8,9 @@ wheels/
 
 # Virtual environments
 .venv
+*.md
+.env
+.*
+tmp/
+*.json
+requests/

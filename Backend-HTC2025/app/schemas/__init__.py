@@ -1,0 +1,1 @@
+"""Application-wide Pydantic schemas."""
