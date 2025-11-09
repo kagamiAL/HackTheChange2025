@@ -31,10 +31,6 @@ interface OpportunityContextType {
   setSelectedOpportunity: (opportunity: VolunteerOpportunity | null) => void;
   hideRemoteOpportunities: boolean;
   setHideRemoteOpportunities: (hide: boolean) => void;
-  favoritedOpportunities: VolunteerOpportunity[];
-  addFavorite: (opportunity: VolunteerOpportunity) => void;
-  removeFavorite: (opportunityId: number) => void;
-  isFavorited: (opportunityId: number) => boolean;
   maxDistance: number;
   setMaxDistance: (distance: number) => void;
 }
@@ -45,26 +41,7 @@ export const OpportunityProvider = ({ children }: { children: ReactNode }) => {
   const [opportunities, setOpportunities] = useState<VolunteerOpportunity[]>([]);
   const [selectedOpportunity, setSelectedOpportunity] = useState<VolunteerOpportunity | null>(null);
   const [hideRemoteOpportunities, setHideRemoteOpportunities] = useState(false);
-  const [favoritedOpportunities, setFavoritedOpportunities] = useState<VolunteerOpportunity[]>([]);
   const [maxDistance, setMaxDistance] = useState(25); // Default 25km
-
-  const addFavorite = (opportunity: VolunteerOpportunity) => {
-    setFavoritedOpportunities(prev => {
-      // Check if already favorited
-      if (prev.some(fav => fav.id === opportunity.id)) {
-        return prev;
-      }
-      return [...prev, opportunity];
-    });
-  };
-
-  const removeFavorite = (opportunityId: number) => {
-    setFavoritedOpportunities(prev => prev.filter(fav => fav.id !== opportunityId));
-  };
-
-  const isFavorited = (opportunityId: number) => {
-    return favoritedOpportunities.some(fav => fav.id === opportunityId);
-  };
 
   return (
     <OpportunityContext.Provider
@@ -75,10 +52,6 @@ export const OpportunityProvider = ({ children }: { children: ReactNode }) => {
         setSelectedOpportunity,
         hideRemoteOpportunities,
         setHideRemoteOpportunities,
-        favoritedOpportunities,
-        addFavorite,
-        removeFavorite,
-        isFavorited,
         maxDistance,
         setMaxDistance,
       }}
