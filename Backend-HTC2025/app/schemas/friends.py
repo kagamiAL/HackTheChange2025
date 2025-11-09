@@ -7,3 +7,7 @@ from pydantic import BaseModel
 
 class FriendRequestSchema(BaseModel):
     friend_email: str
+
+
+class AcceptFriendRequestSchema(BaseModel):
+    request_id: int
