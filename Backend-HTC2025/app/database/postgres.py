@@ -1,7 +1,6 @@
 """PostgreSQL engine + session dependency for FastAPI."""
 
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -34,7 +33,6 @@ async_session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(
 )
 
 
-@asynccontextmanager
 async def get_postgres_session() -> AsyncIterator[AsyncSession]:
     """Yield a scoped async session for FastAPI dependencies."""
 
