@@ -43,16 +43,16 @@
           "match",
           ["get", "class"],
           "wood",
-          "hsl(120, 20%, 88%)",
+          "#ede9fe",
           "scrub",
-          "hsl(120, 15%, 90%)",
+          "#f5f3ff",
           "crop",
-          "hsl(60, 25%, 92%)",
+          "#fff1f2",
           "grass",
-          "hsl(100, 30%, 92%)",
+          "#fce7f3",
           "snow",
-          "hsl(0, 0%, 98%)",
-          "hsl(0, 0%, 95%)"
+          "#ffffff",
+          "#faf5ff"
         ],
         "fill-opacity": 0.3,
         "fill-antialias": false
@@ -68,9 +68,9 @@
           "match",
           ["get", "class"],
           "park",
-          "hsl(120, 30%, 88%)",
+           "#f3e8ff",
           "airport",
-          "hsl(230, 15%, 88%)",
+          "#fce7f3",
           "cemetery",
           "hsl(120, 10%, 90%)",
           "glacier",
@@ -94,7 +94,7 @@
       "source": "composite",
       "source-layer": "water",
       "paint": {
-        "fill-color": "hsl(184, 40%, 75%)"
+        "fill-color": "#f3e8ff"
       }
     },
     {
@@ -104,7 +104,7 @@
       "source-layer": "waterway",
       "minzoom": 8,
       "paint": {
-        "line-color": "hsl(184, 40%, 70%)",
+        "line-color": "#f9c2e7",
         "line-width": [
           "interpolate",
           ["linear"],
@@ -130,12 +130,12 @@
       "type": "fill",
       "source": "composite",
       "source-layer": "building",
-      "minzoom": 13,
-      "maxzoom": 15,
+      "minzoom": 10,
+      "maxzoom": 20,
       "paint": {
-        "fill-color": "hsl(0, 0%, 85%)",
-        "fill-opacity": 0.6,
-        "fill-outline-color": "hsl(0, 0%, 75%)"
+        "fill-color": "#efe9ff",
+        "fill-opacity": ["interpolate", ["linear"], ["zoom"], 11.5, 0.6, 15.2, 0, 17.5, 0, 18.5, 0.6],
+        "fill-outline-color": "#e9d5ff"
       }
     },
     {
@@ -143,39 +143,23 @@
       "type": "fill-extrusion",
       "source": "composite",
       "source-layer": "building",
-      "minzoom": 15,
+      "minzoom": 14,
       "filter": ["==", "extrude", "true"],
       "paint": {
+        "fill-extrusion-opacity": ["interpolate", ["linear"], ["zoom"], 14.6, 0, 15.2, 0.7, 17.5, 0.7, 18.5, 0],
         "fill-extrusion-color": [
           "interpolate",
           ["linear"],
           ["get", "height"],
           0,
-          "#d1d5db",
+          "#ffc7ba",
           50,
-          "#a78bfa",
+          "#fbadb6",
           100,
-          "#ec4899"
+          "#f394af"
         ],
-        "fill-extrusion-height": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          15,
-          0,
-          15.05,
-          ["get", "height"]
-        ],
-        "fill-extrusion-base": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          15,
-          0,
-          15.05,
-          ["get", "min_height"]
-        ],
-        "fill-extrusion-opacity": 0.7
+        "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 14.6, 0, 15.2, ["get","height"], 17.5, ["get","height"], 18.5, 0],
+        "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 14.6, 0, 15.2, ["get","min_height"], 17.5, ["get","min_height"], 18.5, 0]
       }
     },
     {
@@ -205,7 +189,7 @@
           18,
           10
         ],
-        "line-color": "hsl(0, 0%, 100%)",
+        "line-color": "#fff1f7",
         "line-opacity": [
           "step",
           ["zoom"],
@@ -367,7 +351,7 @@
           18,
           32
         ],
-        "line-color": "hsl(0, 0%, 100%)"
+        "line-color": "#f3e8ff", "line-opacity": 0.8
       }
     },
     {
@@ -391,7 +375,7 @@
           16,
           2
         ],
-        "line-color": "hsl(0, 0%, 88%)",
+        "line-color": "#e9d5ff", "line-opacity": 0.7,
         "line-gap-width": [
           "interpolate",
           ["exponential", 1.5],
@@ -427,12 +411,11 @@
         "line-color": [
           "match",
           ["get", "class"],
-          "motorway",
-          "hsl(280, 70%, 75%)",
-          "trunk",
-          "hsl(320, 70%, 75%)",
+          "motorway", "#efe9ff",
+          "trunk", "#fde2f3",
           "hsl(0, 0%, 100%)"
-        ]
+        ],
+        "line-opacity": 0.75
       }
     },
     {
@@ -746,11 +729,11 @@
     "exaggeration": 1.5
   },
   "sky": {
-    "sky-color": "hsl(200, 50%, 90%)",
+    "sky-color": "#fff0f7",
     "sky-horizon-blend": 0.1,
-    "horizon-color": "hsl(320, 70%, 85%)",
+    "horizon-color": "#f8d1ff",
     "horizon-fog-blend": 0.2,
-    "fog-color": "hsl(280, 40%, 95%)",
+    "fog-color": "#faf5ff",
     "fog-ground-blend": 0.2,
     "atmosphere-blend": 0.8
   }

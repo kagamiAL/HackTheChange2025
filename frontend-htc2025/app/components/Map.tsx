@@ -1,5 +1,6 @@
+"use client";
 // Mapbox3DMap.jsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import customStyle from "../styles/mapbox-style.json";
@@ -10,16 +11,110 @@ import { useOpportunities, VolunteerOpportunity } from "@/app/context/Opportunit
 // Use the correct env var for your setup
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
+interface VolunteerOpportunity {
+  id: number;
+  url: string;
+  title: string;
+  description: string;
+  remote_or_online: boolean;
+  organization: {
+    name: string;
+    logo: string | null;
+    url: string;
+  };
+  dates: {
+    start: string;
+    end: string;
+  };
+  duration: string;
+  audience: {
+    scope: string;
+    longitude?: number;
+    latitude?: number;
+  };
+}
+
 const Map = () => {
-  const mapContainer = useRef(null);
-  const map = useRef(null);
+  const mapContainer = useRef<HTMLDivElement | null>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const homeMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const mapLoadedRef = useRef(false);
   const { setOpportunities, setSelectedOpportunity, selectedOpportunity, maxDistance } = useOpportunities();
 
+const [is3D, setIs3D] = useState(true);
+
+const setBuildingsVisibility = (mode: "2d" | "3d") => {
+  if (!map.current) return;
+  if (map.current.getLayer("building-2d")) {
+    map.current.setLayoutProperty(
+      "building-2d",
+      "visibility",
+      mode === "2d" ? "visible" : "none"
+    );
+  }
+  if (map.current.getLayer("building-3d")) {
+    map.current.setLayoutProperty(
+      "building-3d",
+      "visibility",
+      mode === "3d" ? "visible" : "none"
+    );
+  }
+};
+
+const enable3D = () => {
+  if (!map.current) return;
+  if (!map.current.getSource("mapbox-dem")) {
+    map.current.addSource("mapbox-dem", {
+      type: "raster-dem",
+      url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+      tileSize: 512,
+      maxzoom: 14,
+    });
+  }
+  map.current.setTerrain({ source: "mapbox-dem", exaggeration: 1.5 });
+
+  // Ensure sky exists, then show it
+  if (!map.current.getLayer("sky")) {
+    map.current.addLayer({
+      id: "sky",
+      type: "sky",
+      paint: {
+        "sky-type": "atmosphere",
+        "sky-atmosphere-sun": [0.0, 90.0],
+        "sky-atmosphere-sun-intensity": 10,
+        "sky-atmosphere-color": "rgba(200, 220, 240, 1)",
+        "sky-atmosphere-halo-color": "rgba(236, 72, 153, 0.3)",
+      },
+    });
+  } else {
+    map.current.setLayoutProperty("sky", "visibility", "visible");
+  }
+
+  setBuildingsVisibility("3d");
+  map.current.setPitch(60);
+  map.current.setBearing(-17.6);
+};
+
+const enable2D = () => {
+  if (!map.current) return;
+  // Reset camera and terrain
+  map.current.setPitch(0);
+  map.current.setBearing(0);
+  map.current.setTerrain(null);
+
+  // Hide sky (safer than removing)
+  if (map.current.getLayer("sky")) {
+    map.current.setLayoutProperty("sky", "visibility", "none");
+  }
+
+  setBuildingsVisibility("2d");
+};
+
+
+
   useEffect(() => {
-    if (map.current) return;
+    if (map.current || !mapContainer.current) return;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -30,6 +125,8 @@ const Map = () => {
       bearing: -17.6, // angle rotation
       antialias: true, // smoother 3D
     });
+
+    map.current.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-left");
 
     map.current.on("style.load", () => {
       // Check if source already exists before adding
@@ -64,6 +161,8 @@ const Map = () => {
 
       // 3D buildings are now included in the custom style JSON
       mapLoadedRef.current = true;
+      if (is3D) enable3D();
+      else enable2D();
       console.log("Map fully loaded and ready");
     });
 
@@ -85,6 +184,13 @@ const Map = () => {
       }
     }
   }, [selectedOpportunity]);
+
+  // React to mode changes after initial style load
+  useEffect(() => {
+    if (!map.current || !mapLoadedRef.current) return;
+    if (is3D) enable3D();
+    else enable2D();
+  }, [is3D]);
 
   const clearMarkers = () => {
     markersRef.current.forEach((marker) => marker.remove());
@@ -158,7 +264,7 @@ const Map = () => {
               <div class="bg-background rounded-lg overflow-hidden">
                 <div class="bg-gradient-to-r from-violet-500 to-purple-600 h-1.5"></div>
                 <div class="px-4 pt-4 pb-3">
-                  <h3 class="font-semibold text-base leading-tight text-foreground mb-3">${opp.title}</h3>
+                  <h3 class="font-semibold text-sm mb-1"><a href="${opp.url}" target="_blank" rel="noopener noreferrer" class="text-violet-700 hover:text-[#ff1493] opp-title-link duration-150">${opp.title}</a></h3>
                 </div>
 
                 ${
@@ -331,13 +437,26 @@ const Map = () => {
   };
 
   return (
-    <div className="w-full h-full relative" ref={mapContainer}>
+    <div className="w-full h-full relative">
+      <div ref={mapContainer} className="w-full h-full" />
       <LocationSearch onLocationSelect={handleLocationSelect} />
       <div className="absolute bottom-4 left-4 z-10 w-72 sm:w-80 transition-all duration-300 ease-in-out"
         style={{
           left: 'calc(max(1rem, env(safe-area-inset-left)) + var(--left-sidebar-width, 0px))'
         }}>
         <DistanceSlider />
+      </div>
+      <div className="absolute bottom-4 right-4 z-10 pointer-events-none">
+        <button
+          type="button"
+          onClick={() => setIs3D((v) => !v)}
+          className="pointer-events-auto rounded-md bg-white/90 px-3 py-2 text-sm font-medium shadow border hover:bg-white transition"
+          aria-pressed={is3D}
+          aria-label="Toggle 3D mode"
+          title={is3D ? "Switch to 2D" : "Switch to 3D"}
+        >
+          {is3D ? "3D View" : "2D View"}
+        </button>
       </div>
     </div>
   );
