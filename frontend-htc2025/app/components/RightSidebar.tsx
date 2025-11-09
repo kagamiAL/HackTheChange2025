@@ -11,10 +11,8 @@ interface RightSidebarProps {
 }
 
 export function RightSidebar({ children, className }: RightSidebarProps) {
-  // Collapse by default on mobile screens
-  const [isCollapsed, setIsCollapsed] = useState(
-    typeof window !== 'undefined' && window.innerWidth < 1024
-  );
+  // Collapsed by default - users can open it when they have favorites
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   return (
     <div className="relative h-full">

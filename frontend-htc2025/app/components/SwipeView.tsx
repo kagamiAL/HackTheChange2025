@@ -83,6 +83,11 @@ export default function SwipeView() {
 
   const currentOpportunity = filteredOpportunities[currentIndex];
 
+  // Safety check: ensure currentOpportunity exists and has required data
+  if (!currentOpportunity || !currentOpportunity.organization || !currentOpportunity.audience) {
+    return null;
+  }
+
   const animateCardOut = (direction: 'left' | 'right', callback: () => void) => {
     setIsAnimatingOut(true);
     setAnimateDirection(direction);
@@ -235,48 +240,50 @@ export default function SwipeView() {
           <div className="absolute inset-0 bg-red-500/20 z-10 pointer-events-none rounded-xl"></div>
         )}
         <img
-          src={currentOpportunity.organization.logo || "/placeholder-event.jpg"}
+          src={currentOpportunity.organization?.logo || "/placeholder-event.jpg"}
           alt="Event Image"
           className="w-full h-40 sm:h-48 md:h-56 object-contain bg-gray-50 pointer-events-none"
         />
         <div className="p-4 sm:p-6 flex-1 flex flex-col min-h-0">
           <span className="bg-gray-200 text-gray-900 text-xs sm:text-sm font-medium px-2.5 sm:px-3 py-1 rounded-full inline-block w-fit flex-shrink-0">
-            {currentOpportunity.organization.name}
+            {currentOpportunity.organization?.name || 'Unknown Organization'}
           </span>
 
           <h2 className="mt-2 sm:mt-3 text-xl sm:text-2xl font-semibold text-gray-900 line-clamp-2 flex-shrink-0">
-            {currentOpportunity.title}
+            {currentOpportunity.title || 'Untitled Opportunity'}
           </h2>
 
           <div className="overflow-y-auto flex-1 min-h-0 w-full">
             <p className="mt-2 sm:mt-3 text-sm sm:text-base text-gray-700 leading-relaxed">
-              {currentOpportunity.description}
+              {currentOpportunity.description || 'No description available'}
             </p>
 
             <div className="mt-3 sm:mt-4 flex flex-col text-gray-500 text-xs sm:text-sm">
-              <div className="flex items-center space-x-1 mt-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                <span>{currentOpportunity.audience.scope}</span>
-              </div>
+              {currentOpportunity.audience?.scope && (
+                <div className="flex items-center space-x-1 mt-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  <span>{currentOpportunity.audience.scope}</span>
+                </div>
+              )}
 
               {currentOpportunity.dates?.start && (
                 <div className="flex items-center space-x-1 mt-2">
