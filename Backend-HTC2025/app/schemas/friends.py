@@ -9,5 +9,6 @@ class FriendRequestSchema(BaseModel):
     friend_email: str
 
 
-class AcceptFriendRequestSchema(BaseModel):
+class ManageFriendRequestSchema(BaseModel):
     request_id: int
+    accept: bool

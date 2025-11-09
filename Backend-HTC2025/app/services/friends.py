@@ -32,6 +32,19 @@ class FriendsService:
         if existing_request is not None:
             raise ValueError("A friend request already exists between these users.")
 
+    def _create_friendship_from_request(self, friend_request: FriendRequest):
+        """Create a friendship record based on an accepted friend request."""
+
+        user1_id, user2_id = sorted(
+            [friend_request.sender_id, friend_request.receiver_id]
+        )
+
+        friendship = Friendship(
+            user_id1=user1_id,
+            user_id2=user2_id,
+        )
+        self._session.add(friendship)
+
     async def send_friend_request(self, sender: User, receiver: User) -> None:
         """Send a friend request from one user to another."""
 
@@ -45,8 +58,10 @@ class FriendsService:
         self._session.add(friend_request)
         await self._session.commit()
 
-    async def accept_friend_request(self, reciever: User, request_id: int) -> None:
-        """Accept a friend request by its ID."""
+    async def manage_friend_request(
+        self, reciever: User, request_id: int, accept: bool
+    ) -> None:
+        """Manage a friend request: accept or reject."""
         stmt = select(FriendRequest).where(
             and_(
                 FriendRequest.id == request_id,
@@ -60,15 +75,10 @@ class FriendsService:
         if friend_request is None:
             raise ValueError("Friend request not found.")
 
-        friend_request.status = Friend_Request_Status.accepted
+        if accept:
+            friend_request.status = Friend_Request_Status.accepted
+            self._create_friendship_from_request(friend_request)
+        else:
+            friend_request.status = Friend_Request_Status.rejected
 
-        user1_id, user2_id = sorted(
-            [friend_request.sender_id, friend_request.receiver_id]
-        )
-
-        friendship = Friendship(
-            user_id1=user1_id,
-            user_id2=user2_id,
-        )
-        self._session.add(friendship)
         await self._session.commit()
