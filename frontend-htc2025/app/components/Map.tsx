@@ -10,6 +10,29 @@ import { useOpportunities, VolunteerOpportunity } from "@/app/context/Opportunit
 // Use the correct env var for your setup
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
+interface VolunteerOpportunity {
+  id: number;
+  url: string;
+  title: string;
+  description: string;
+  remote_or_online: boolean;
+  organization: {
+    name: string;
+    logo: string | null;
+    url: string;
+  };
+  dates: {
+    start: string;
+    end: string;
+  };
+  duration: string;
+  audience: {
+    scope: string;
+    longitude?: number;
+    latitude?: number;
+  };
+}
+
 const Map = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -158,7 +181,7 @@ const Map = () => {
               <div class="bg-background rounded-lg overflow-hidden">
                 <div class="bg-gradient-to-r from-violet-500 to-purple-600 h-1.5"></div>
                 <div class="px-4 pt-4 pb-3">
-                  <h3 class="font-semibold text-base leading-tight text-foreground mb-3">${opp.title}</h3>
+                  <h3 class="font-semibold text-sm mb-1"><a href="${opp.url}" target="_blank" rel="noopener noreferrer" class="text-violet-700 hover:text-[#ff1493] opp-title-link duration-150">${opp.title}</a></h3>
                 </div>
 
                 ${
