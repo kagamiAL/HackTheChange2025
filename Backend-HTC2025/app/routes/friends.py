@@ -20,12 +20,13 @@ def get_friends_service(
 
 @router.get("/", status_code=status.HTTP_200_OK, summary="Get list of friends")
 async def get_friends(
-    db: AsyncSession = Depends(get_postgres_session),
+    friends_service: FriendsService = Depends(get_friends_service),
     user: User = Depends(get_current_user),
 ):
     """Retrieve the list of friends for the current user."""
     # Placeholder implementation
-    return {"friends": []}
+    friends_list = await friends_service.get_friends_list(user)
+    return {"friends": friends_list}
 
 
 @router.post(

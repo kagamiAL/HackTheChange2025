@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Sequence
 from sqlalchemy import select, or_, and_
 from app.models.user import User
 from app.models.friendships import Friendship
@@ -100,3 +101,30 @@ class FriendsService:
             friend_request.status = Friend_Request_Status.rejected
 
         await self._session.commit()
+
+    async def get_friends_list(self, user: User) -> Sequence[User]:
+        """Retrieve the list of friends for a given user."""
+        stmt = select(Friendship).where(
+            or_(
+                Friendship.user_id1 == user.id,
+                Friendship.user_id2 == user.id,
+            )
+        )
+        result = await self._session.execute(stmt)
+        friendships = result.scalars().all()
+
+        friend_ids = set()
+        for friendship in friendships:
+            if friendship.user_id1 == user.id:
+                friend_ids.add(friendship.user_id2)
+            else:
+                friend_ids.add(friendship.user_id1)
+
+        if not friend_ids:
+            return []
+
+        stmt = select(User).where(User.id.in_(friend_ids))
+        result = await self._session.execute(stmt)
+        friends = result.scalars().all()
+
+        return friends
