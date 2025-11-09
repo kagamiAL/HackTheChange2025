@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     sqlalchemy_echo: bool = False
     postgres_pool_size: int = 5
     postgres_max_overflow: int = 10
+    firebase_service_account_json: str
 
     class Config:
         env_file = ".env"
