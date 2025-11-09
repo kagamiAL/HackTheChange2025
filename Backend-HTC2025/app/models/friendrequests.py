@@ -10,12 +10,12 @@ from app.models import Base
 import enum
 
 
-class FriendRequestStatus(enum.Enum):
+class Friend_Request_Status(enum.Enum):
     """Enumeration for friend request status."""
 
-    PENDING = "pending"
-    ACCEPTED = "accepted"
-    REJECTED = "rejected"
+    pending = "pending"
+    accepted = "accepted"
+    rejected = "rejected"
 
 
 class FriendRequest(Base):
@@ -38,8 +38,8 @@ class FriendRequest(Base):
         nullable=False,
         index=True,
     )
-    status: Mapped[FriendRequestStatus] = mapped_column(
-        Enum(FriendRequestStatus),
+    status: Mapped[Friend_Request_Status] = mapped_column(
+        Enum(Friend_Request_Status),
         nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(
