@@ -9,10 +9,28 @@ class FriendsService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def _already_friends(self, user1: User, user2: User) -> bool:
+        """Check if two users are already friends."""
+        user1_id, user2_id = sorted([user1.id, user2.id])
+
+        stmt = select(Friendship).where(
+            and_(
+                Friendship.user_id1 == user1_id,
+                Friendship.user_id2 == user2_id,
+            )
+        )
+        result = await self._session.execute(stmt)
+        friendship = result.scalar_one_or_none()
+
+        return friendship is not None
+
     async def _validate_friend_request(self, sender: User, receiver: User) -> None:
         """Validate that a friend request can be sent from sender to receiver."""
         if sender.id == receiver.id:
             raise ValueError("Cannot send friend request to oneself.")
+
+        if await self._already_friends(sender, receiver):
+            raise ValueError("Users are already friends.")
 
         stmt = select(FriendRequest).where(
             or_(
