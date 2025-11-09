@@ -148,3 +148,17 @@
   color: var(--foreground) !important;
   background: transparent !important;
 }
+
+/* Marker Animation */
+@keyframes markerFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.marker-fade-in {
+  animation: markerFadeIn 0.5s ease-out forwards;
+}
