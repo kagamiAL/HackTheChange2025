@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.requests import Request
 
@@ -78,6 +79,14 @@ def create_application() -> FastAPI:
         debug=settings.environment == Environment.DEVELOPMENT,
         version="0.0.1",
         description="Voluntr API main backend",
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     def health_check():
