@@ -42,6 +42,9 @@ async def get_postgres_session() -> AsyncIterator[AsyncSession]:
     try:
         yield session
     except Exception:
+        logger.error(
+            "Exception occurred, rolling back Postgres session.", exc_info=True
+        )
         await session.rollback()
         raise
     finally:
