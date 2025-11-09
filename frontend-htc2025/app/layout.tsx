@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppHeader } from "@/app/components/app-header";
+import { OpportunityProvider } from "@/app/context/OpportunityContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,8 +29,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-hidden h-screen flex flex-col`}
       >
-        <AppHeader savedCount={0} />
-        {children}
+        <OpportunityProvider>
+          <AppHeader savedCount={0} />
+          {children}
+        </OpportunityProvider>
       </body>
     </html>
   );
