@@ -13,6 +13,7 @@ const Map = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const homeMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const mapLoadedRef = useRef(false);
   const { setOpportunities } = useOpportunities();
 
@@ -73,6 +74,23 @@ const Map = () => {
     markersRef.current = [];
   };
 
+  const setHomeMarker = (longitude: number, latitude: number) => {
+    // Remove previous home marker if it exists
+    if (homeMarkerRef.current) {
+      homeMarkerRef.current.remove();
+    }
+
+    // Create a new home marker with a distinct color (red/pink)
+    homeMarkerRef.current = new mapboxgl.Marker({ color: "#ec4899" })
+      .setLngLat([longitude, latitude])
+      .setPopup(
+        new mapboxgl.Popup({ offset: 25 }).setHTML(
+          `<div class="p-2"><p class="font-semibold text-sm">Your Search Location</p></div>`
+        )
+      )
+      .addTo(map.current!);
+  };
+
   const fetchVolunteerOpportunities = async (
     latitude: number,
     longitude: number,
@@ -110,19 +128,60 @@ const Map = () => {
         const marker = new mapboxgl.Marker({ color: "#8b5cf6" })
           .setLngLat([lng, lat])
           .setPopup(
-            new mapboxgl.Popup({ offset: 25, maxWidth: "300px" }).setHTML(
+            new mapboxgl.Popup({
+              offset: 25,
+              maxWidth: "340px",
+              className: "volunteer-popup"
+            }).setHTML(
               `
-              <div class="p-2">
-                <h3 class="font-semibold text-sm mb-1">${opp.title}</h3>
-                <p class="text-xs text-gray-600 mb-2">${opp.organization.name}</p>
-                <p class="text-xs text-gray-500 mb-2 line-clamp-2">${opp.description}</p>
-                <div class="text-xs text-gray-500">
-                  <div>Duration: ${opp.duration}</div>
-                  ${
-                    opp.dates?.start
-                      ? `<div>Start: ${new Date(opp.dates.start).toLocaleDateString()}</div>`
-                      : ""
-                  }
+              <div class="bg-background rounded-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-violet-500 to-purple-600 h-1.5"></div>
+                <div class="px-4 pt-4 pb-3">
+                  <h3 class="font-semibold text-base leading-tight text-foreground mb-3">${opp.title}</h3>
+                </div>
+
+                ${
+                  opp.organization.logo
+                    ? `<img src="${opp.organization.logo}" alt="${opp.organization.name}" class="w-full h-40 object-contain bg-muted/30" />`
+                    : ''
+                }
+
+                <div class="px-4 pb-4 space-y-3 ${opp.organization.logo ? 'pt-3' : ''}">
+                  <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span>${opp.organization.name}</span>
+                  </div>
+
+                  <p class="text-sm text-muted-foreground leading-relaxed line-clamp-3">${opp.description}</p>
+
+                  <div class="flex flex-wrap gap-2 pt-1">
+                    ${
+                      opp.duration
+                        ? `
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/30 rounded-md">
+                      <svg class="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span class="text-xs font-medium text-violet-700 dark:text-violet-300">${opp.duration}</span>
+                    </div>
+                        `
+                        : ""
+                    }
+                    ${
+                      opp.dates?.start
+                        ? `
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 dark:bg-purple-950/30 rounded-md">
+                      <svg class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span class="text-xs font-medium text-purple-700 dark:text-purple-300">${new Date(opp.dates.start).toLocaleDateString()}</span>
+                    </div>
+                        `
+                        : ""
+                    }
+                  </div>
                 </div>
               </div>
               `
@@ -212,6 +271,9 @@ const Map = () => {
     }
 
     console.log("Flying to location:", { longitude, latitude, postalCode });
+
+    // Set the home marker at the searched location
+    setHomeMarker(longitude, latitude);
 
     map.current.flyTo({
       center: [longitude, latitude],
