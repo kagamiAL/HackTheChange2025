@@ -58,6 +58,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("sender_id", "receiver_id"),
     )
     op.create_index(
         op.f("ix_friendrequests_receiver_id"),
