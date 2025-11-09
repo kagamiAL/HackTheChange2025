@@ -30,7 +30,7 @@ export function AppHeader({ savedCount = 0, className }: AppHeaderProps) {
             strokeWidth={1.5}
           />
         </span>
-        <span className="text-lg font-semibold tracking-tight">Voluntr</span>
+        <span className="text-lg font-semibold tracking-tight">Altruism</span>
       </Link>
 
       <Button
