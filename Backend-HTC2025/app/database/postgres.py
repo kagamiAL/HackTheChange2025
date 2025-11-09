@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def _build_async_engine() -> AsyncEngine:
     return create_async_engine(
-        settings.database_url,
+        settings.database_url.replace("postgresql://", "postgresql+asyncpg://"),
         echo=settings.sqlalchemy_echo,
         pool_pre_ping=True,
         pool_size=settings.postgres_pool_size,
