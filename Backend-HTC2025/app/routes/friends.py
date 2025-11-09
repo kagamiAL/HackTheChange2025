@@ -29,8 +29,32 @@ async def get_friends(
     return {"friends": friends_list}
 
 
+@router.get(
+    "/requests/pending",
+    status_code=status.HTTP_200_OK,
+    summary="Get pending friend requests",
+)
+async def get_pending_friend_requests(
+    friends_service: FriendsService = Depends(get_friends_service),
+    user: User = Depends(get_current_user),
+):
+    """Retrieve pending friend requests sent to the current user."""
+    pending_requests = await friends_service.get_pending_friend_requests(user)
+    return {
+        "pending_requests": [
+            {
+                "id": request.id,
+                "sender_id": request.sender_id,
+                "status": request.status.value,
+                "created_at": request.created_at,
+            }
+            for request in pending_requests
+        ]
+    }
+
+
 @router.post(
-    "/request", status_code=status.HTTP_201_CREATED, summary="Send friend request"
+    "/requests/send", status_code=status.HTTP_201_CREATED, summary="Send friend request"
 )
 async def send_friend_request(
     friend_request: FriendRequestSchema,
@@ -56,7 +80,7 @@ async def send_friend_request(
 
 
 @router.post(
-    "/manage-request", status_code=status.HTTP_200_OK, summary="Accept friend request"
+    "/requests/manage", status_code=status.HTTP_200_OK, summary="Accept friend request"
 )
 async def manage_friend_request(
     manage_request: ManageFriendRequestSchema,
