@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 
 from app.config import Environment, settings
-from app.routes import auth_router
+from app.routes import auth_router, friends_router
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +61,7 @@ def create_application() -> FastAPI:
 
     app.get("/health", tags=["Health"])(health_check)
     app.include_router(auth_router)
+    app.include_router(friends_router)
     logger.info("FastAPI application created and configured.")
 
     return app
