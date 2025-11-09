@@ -11,18 +11,21 @@ interface RightSidebarProps {
 }
 
 export function RightSidebar({ children, className }: RightSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Collapse by default on mobile screens
+  const [isCollapsed, setIsCollapsed] = useState(
+    typeof window !== 'undefined' && window.innerWidth < 1024
+  );
 
   return (
     <div className="relative h-full">
       <aside
         className={cn(
           "flex h-full flex-col border-l border-border bg-background shadow-2xl transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-0 border-l-0" : "w-80",
+          isCollapsed ? "w-0 border-l-0" : "w-full sm:w-80 md:w-96",
           className
         )}
       >
-        <div className={cn("w-80 h-full flex flex-col", isCollapsed && "invisible")}>
+        <div className={cn("w-full sm:w-80 md:w-96 h-full flex flex-col", isCollapsed && "invisible")}>
           {children}
         </div>
       </aside>
