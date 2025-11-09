@@ -203,6 +203,18 @@ const Map = () => {
                         : ""
                     }
                   </div>
+
+                  <a
+                    href="${opp.url}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="mt-3 block w-full text-center px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium text-sm rounded-md hover:from-violet-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Apply Now
+                    <svg class="inline-block w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
                 </div>
               </div>
               `
