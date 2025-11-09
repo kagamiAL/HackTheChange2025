@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     # Environment
     environment: Environment = Environment.DEVELOPMENT
     app_name: str = "Voluntr API Backend"
+    frontend_url: str | None = None
+    cors_allow_origins: list[str] = Field(
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ]
+    )
 
     # Postgres connection
     database_url: str
@@ -34,3 +41,5 @@ class Settings(BaseSettings):
 
 
 settings = Settings()  # type: ignore
+if settings.frontend_url and settings.frontend_url not in settings.cors_allow_origins:
+    settings.cors_allow_origins.append(settings.frontend_url)
