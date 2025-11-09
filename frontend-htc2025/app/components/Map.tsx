@@ -10,24 +10,25 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 interface VolunteerOpportunity {
   id: number;
+  url: string;
   title: string;
   description: string;
   remote_or_online: boolean;
   organization: {
     name: string;
     logo: string | null;
-  };
-  audience: {
-    scope: string;
-    longitude?: number;
-    latitude?: number;
+    url: string;
   };
   dates: {
     start: string;
     end: string;
   };
   duration: string;
-  url: string;
+  audience: {
+    scope: string;
+    longitude?: number;
+    latitude?: number;
+  };
 }
 
 const Map = () => {
@@ -157,8 +158,8 @@ const Map = () => {
             new mapboxgl.Popup({ offset: 25, maxWidth: '300px' }).setHTML(
               `
               <div class="p-2">
-                <h3 class="font-semibold text-sm mb-1">${opp.title}</h3>
-                <p class="text-xs text-gray-600 mb-2">${opp.organization.name}</p>
+                <h3 class="font-semibold text-sm mb-1"><a href="${opp.url}" target="_blank" rel="noopener noreferrer" class="text-violet-700 opp-title-link duration-150">${opp.title}</a></h3>
+                <p class="text-xs mb-2"><a href="${opp.organization.url}" target="_blank" rel="noopener noreferrer" class="text-[#ff1493] hover:text-violet-700 transition-colors duration-150">${opp.organization.name}</a></p>
                 <p class="text-xs text-gray-500 mb-2 line-clamp-2">${opp.description}</p>
                 <div class="text-xs text-gray-500">
                   <div>Duration: ${opp.duration}</div>
