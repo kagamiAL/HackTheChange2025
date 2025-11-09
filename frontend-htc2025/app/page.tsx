@@ -1,16 +1,26 @@
 "use client";
 
+import { useState } from "react";
+import { Heart, Sparkles, MapPin, Users2 } from "lucide-react";
+
 import Map from "./components/Map";
-import { RightSidebar, RightSidebarHeader, RightSidebarContent } from "./components/RightSidebar";
-import { LeftSidebar, LeftSidebarHeader, LeftSidebarContent } from "./components/LeftSidebar";
+import { FriendsPanel } from "./components/FriendsPanel";
 import { FavoritesList } from "./components/FavoritesList";
+import { LeftSidebar, LeftSidebarContent, LeftSidebarHeader } from "./components/LeftSidebar";
 import SwipeView from "./components/SwipeView";
+import { RightSidebar, RightSidebarContent, RightSidebarHeader } from "./components/RightSidebar";
 import { WelcomeModal } from "./components/WelcomeModal";
-import { Heart, Sparkles, MapPin } from "lucide-react";
 import { useOpportunities } from "./context/OpportunityContext";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   const { hideRemoteOpportunities, setHideRemoteOpportunities } = useOpportunities();
+  const rightSidebarTabs = [
+    { id: "favorites", label: "Favorites", icon: Heart },
+    { id: "friends", label: "Friends", icon: Users2 },
+  ] as const;
+  type TabId = (typeof rightSidebarTabs)[number]["id"];
+  const [activeRightSidebarTab, setActiveRightSidebarTab] = useState<TabId>("favorites");
 
   return (
     <div className="w-full h-full overflow-hidden bg-zinc-50 relative">
@@ -52,14 +62,41 @@ export default function Home() {
       {/* Right Sidebar - Overlaying the map */}
       <div className="absolute top-0 right-0 bottom-0">
         <RightSidebar>
-          <RightSidebarHeader>
-            <div className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-pink-500 fill-pink-500" />
-              <h2 className="text-lg font-semibold">Favorites</h2>
+          <RightSidebarHeader className="flex flex-col gap-3">
+            {activeRightSidebarTab === "favorites" ? (
+              <div className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-pink-500 fill-pink-500" />
+                <h2 className="text-lg font-semibold">Favorites</h2>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Users2 className="h-5 w-5 text-sky-500" />
+                <h2 className="text-lg font-semibold">Friends</h2>
+              </div>
+            )}
+
+            <div className="flex w-full gap-2 rounded-2xl border border-border/60 bg-muted/30 p-1">
+              {rightSidebarTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveRightSidebarTab(tab.id)}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium transition-colors",
+                    activeRightSidebarTab === tab.id
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  aria-pressed={activeRightSidebarTab === tab.id}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  <span>{tab.label}</span>
+                </button>
+              ))}
             </div>
           </RightSidebarHeader>
           <RightSidebarContent>
-            <FavoritesList />
+            {activeRightSidebarTab === "favorites" ? <FavoritesList /> : <FriendsPanel />}
           </RightSidebarContent>
         </RightSidebar>
       </div>
