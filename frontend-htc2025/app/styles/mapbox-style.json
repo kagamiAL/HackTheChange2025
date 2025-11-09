@@ -94,7 +94,7 @@
       "source": "composite",
       "source-layer": "water",
       "paint": {
-        "fill-color": "hsl(184, 40%, 75%)"
+        "fill-color": "#f3e8ff"
       }
     },
     {
@@ -104,7 +104,7 @@
       "source-layer": "waterway",
       "minzoom": 8,
       "paint": {
-        "line-color": "hsl(184, 40%, 70%)",
+        "line-color": "#f9c2e7",
         "line-width": [
           "interpolate",
           ["linear"],
@@ -133,9 +133,9 @@
       "minzoom": 13,
       "maxzoom": 15,
       "paint": {
-        "fill-color": "hsl(0, 0%, 85%)",
+        "fill-color": "#efe9ff",
         "fill-opacity": 0.6,
-        "fill-outline-color": "hsl(0, 0%, 75%)"
+        "fill-outline-color": "#e9d5ff"
       }
     },
     {
@@ -151,11 +151,11 @@
           ["linear"],
           ["get", "height"],
           0,
-          "#d1d5db",
+          "#ffc7ba",
           50,
-          "#a78bfa",
+          "#fbadb6",
           100,
-          "#ec4899"
+          "#f394af"
         ],
         "fill-extrusion-height": [
           "interpolate",
@@ -175,7 +175,7 @@
           15.05,
           ["get", "min_height"]
         ],
-        "fill-extrusion-opacity": 0.7
+        "fill-extrusion-opacity": 0.95
       }
     },
     {
@@ -205,7 +205,7 @@
           18,
           10
         ],
-        "line-color": "hsl(0, 0%, 100%)",
+        "line-color": "#fff1f7",
         "line-opacity": [
           "step",
           ["zoom"],
@@ -746,11 +746,11 @@
     "exaggeration": 1.5
   },
   "sky": {
-    "sky-color": "hsl(200, 50%, 90%)",
+    "sky-color": "#fff0f7",
     "sky-horizon-blend": 0.1,
-    "horizon-color": "hsl(320, 70%, 85%)",
+    "horizon-color": "#f8d1ff",
     "horizon-fog-blend": 0.2,
-    "fog-color": "hsl(280, 40%, 95%)",
+    "fog-color": "#faf5ff",
     "fog-ground-blend": 0.2,
     "atmosphere-blend": 0.8
   }
