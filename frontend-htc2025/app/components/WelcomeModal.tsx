@@ -40,7 +40,8 @@ export function WelcomeModal() {
           </div>
           <DialogTitle className="text-2xl text-center">Welcome to Voluntr!</DialogTitle>
           <DialogDescription className="text-center text-base pt-2">
-            Discover volunteer opportunities in your community with an interactive map and swipe experience.
+            Discover volunteer opportunities in your community with an interactive map and swipe
+            experience.
           </DialogDescription>
         </DialogHeader>
 
@@ -64,7 +65,8 @@ export function WelcomeModal() {
             <div>
               <h3 className="font-semibold mb-1">Explore the Map</h3>
               <p className="text-sm text-muted-foreground">
-                Click on markers to view opportunities, or browse the interactive 3D map to discover what's nearby.
+                Click on markers to view opportunities, or browse the interactive 3D map to discover
+                what's nearby.
               </p>
             </div>
           </div>
@@ -76,7 +78,8 @@ export function WelcomeModal() {
             <div>
               <h3 className="font-semibold mb-1">Swipe Through Opportunities</h3>
               <p className="text-sm text-muted-foreground">
-                Use the swipe view to browse opportunities. Swipe right or tap the checkmark to save favorites, swipe left to skip.
+                Use the swipe view on the left to browse opportunities. Swipe right or tap the
+                checkmark to save favorites, swipe left to skip.
               </p>
             </div>
           </div>
@@ -88,7 +91,7 @@ export function WelcomeModal() {
             <div>
               <h3 className="font-semibold mb-1">Save & Apply</h3>
               <p className="text-sm text-muted-foreground">
-                Access your saved opportunities anytime from the heart icon in the header and apply directly.
+                Access your saved opportunities anytime from the community sidebar on the right.
               </p>
             </div>
           </div>
