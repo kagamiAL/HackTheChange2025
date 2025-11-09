@@ -1,11 +1,8 @@
 """FastAPI router for authentication endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.postgres import get_postgres_session
-from app.dependencies.firebase import firebase_auth_dependency
-from app.integrations.firebase import FirebaseAuthClient
+from app.dependencies.auth import get_auth_service
 from app.schemas.auth import AuthResponse, SignInRequest, SignUpRequest, UserPayload
 from app.services.auth import (
     AuthService,
@@ -25,12 +22,9 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 )
 async def sign_up(
     payload: SignUpRequest,
-    session: AsyncSession = Depends(get_postgres_session),
-    firebase_auth: FirebaseAuthClient = Depends(firebase_auth_dependency),
+    service: AuthService = Depends(get_auth_service),
 ) -> AuthResponse:
     """Verify the Firebase token, create/update the user, and return profile data."""
-
-    service = AuthService(session=session, firebase_auth=firebase_auth)
 
     try:
         user, is_new_user = await service.sign_up(
@@ -57,12 +51,9 @@ async def sign_up(
 )
 async def login(
     payload: SignInRequest,
-    session: AsyncSession = Depends(get_postgres_session),
-    firebase_auth: FirebaseAuthClient = Depends(firebase_auth_dependency),
+    service: AuthService = Depends(get_auth_service),
 ) -> AuthResponse:
     """Verify the Firebase token and return the associated user profile."""
-
-    service = AuthService(session=session, firebase_auth=firebase_auth)
 
     try:
         user = await service.sign_in(token=payload.id_token)
