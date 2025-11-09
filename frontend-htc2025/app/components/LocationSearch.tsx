@@ -9,10 +9,14 @@ interface LocationResult {
   id: string;
   place_name: string;
   center: [number, number];
+  context?: Array<{
+    id: string;
+    text: string;
+  }>;
 }
 
 interface LocationSearchProps {
-  onLocationSelect: (longitude: number, latitude: number, placeName: string) => void;
+  onLocationSelect: (longitude: number, latitude: number, postalCode: string | null) => void;
 }
 
 const LocationSearch = ({ onLocationSelect }: LocationSearchProps) => {
@@ -63,18 +67,45 @@ const LocationSearch = ({ onLocationSelect }: LocationSearchProps) => {
     return () => clearTimeout(timeoutId);
   }, [query]);
 
+  const extractPostalCode = (result: LocationResult): string | null => {
+    const postalCodeRegex = /\b([A-Z]\d[A-Z]\s?\d[A-Z]\d)\b/i;
+    const match = result.place_name.match(postalCodeRegex);
+
+    if (match) {
+      // Remove spaces and return in format like "T3A5K9"
+      return match[1].replace(/\s/g, "");
+    }
+
+    // Try to find it in the context
+    if (result.context) {
+      for (const ctx of result.context) {
+        if (ctx.id.startsWith("postcode")) {
+          return ctx.text.replace(/\s/g, "");
+        }
+      }
+    }
+
+    return null;
+  };
+
   const handleSelectLocation = (result: LocationResult) => {
     const [longitude, latitude] = result.center;
-    onLocationSelect(longitude, latitude, result.place_name);
+    const postalCode = extractPostalCode(result);
+
+    console.log("Selected location:", {
+      place: result.place_name,
+      postalCode,
+      longitude,
+      latitude,
+    });
+
+    onLocationSelect(longitude, latitude, postalCode);
     setQuery(result.place_name);
     setShowResults(false);
   };
 
   return (
-    <div
-      ref={searchRef}
-      className="absolute top-4 left-4 z-10 w-80"
-    >
+    <div ref={searchRef} className="absolute top-4 left-4 z-10 w-80">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -107,9 +138,7 @@ const LocationSearch = ({ onLocationSelect }: LocationSearchProps) => {
 
       {isLoading && (
         <Card className="mt-2 bg-white shadow-lg">
-          <div className="px-4 py-3 text-sm text-muted-foreground">
-            Searching...
-          </div>
+          <div className="px-4 py-3 text-sm text-muted-foreground">Searching...</div>
         </Card>
       )}
     </div>
