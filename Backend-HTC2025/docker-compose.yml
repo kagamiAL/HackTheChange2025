@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: voluntr-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: voluntr_dev
+      POSTGRES_USER: voluntr_user
+      POSTGRES_PASSWORD: voluntr_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voluntr_user -d voluntr_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - voluntr-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  voluntr-network:
+    driver: bridge
