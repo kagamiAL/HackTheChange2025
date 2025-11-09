@@ -1,6 +1,9 @@
-from fastapi import FastAPI
-from app.config import Environment, settings
 import logging
+
+from fastapi import FastAPI
+
+from app.config import Environment, settings
+from app.routes import auth_router
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +60,7 @@ def create_application() -> FastAPI:
         return {"status": "ok"}
 
     app.get("/health", tags=["Health"])(health_check)
+    app.include_router(auth_router)
     logger.info("FastAPI application created and configured.")
 
     return app
