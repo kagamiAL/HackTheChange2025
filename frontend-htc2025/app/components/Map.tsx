@@ -16,6 +16,7 @@ const Map = () => {
   const homeMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const mapLoadedRef = useRef(false);
   const { setOpportunities } = useOpportunities();
+  const { setSelectedOpportunity, opportunities } = useOpportunities();
 
   useEffect(() => {
     if (map.current) return;
@@ -93,7 +94,7 @@ const Map = () => {
     // Add fade-in animation class
     const markerElement = homeMarkerRef.current.getElement();
     if (markerElement) {
-      markerElement.classList.add('marker-fade-in');
+      markerElement.classList.add("marker-fade-in");
     }
   };
 
@@ -137,22 +138,24 @@ const Map = () => {
             new mapboxgl.Popup({
               offset: 25,
               maxWidth: "340px",
-              className: "volunteer-popup"
+              className: "volunteer-popup",
             }).setHTML(
               `
               <div class="bg-background rounded-lg overflow-hidden">
                 <div class="bg-gradient-to-r from-violet-500 to-purple-600 h-1.5"></div>
                 <div class="px-4 pt-4 pb-3">
-                  <h3 class="font-semibold text-base leading-tight text-foreground mb-3">${opp.title}</h3>
+                  <h3 class="font-semibold text-base leading-tight text-foreground mb-3">${
+                    opp.title
+                  }</h3>
                 </div>
 
                 ${
                   opp.organization.logo
                     ? `<img src="${opp.organization.logo}" alt="${opp.organization.name}" class="w-full h-40 object-contain bg-muted/30" />`
-                    : ''
+                    : ""
                 }
 
-                <div class="px-4 pb-4 space-y-3 ${opp.organization.logo ? 'pt-3' : ''}">
+                <div class="px-4 pb-4 space-y-3 ${opp.organization.logo ? "pt-3" : ""}">
                   <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -160,7 +163,9 @@ const Map = () => {
                     <span>${opp.organization.name}</span>
                   </div>
 
-                  <p class="text-sm text-muted-foreground leading-relaxed line-clamp-3">${opp.description}</p>
+                  <p class="text-sm text-muted-foreground leading-relaxed line-clamp-3">${
+                    opp.description
+                  }</p>
 
                   <div class="flex flex-wrap gap-2 pt-1">
                     ${
@@ -182,7 +187,9 @@ const Map = () => {
                       <svg class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span class="text-xs font-medium text-purple-700 dark:text-purple-300">${new Date(opp.dates.start).toLocaleDateString()}</span>
+                      <span class="text-xs font-medium text-purple-700 dark:text-purple-300">${new Date(
+                        opp.dates.start
+                      ).toLocaleDateString()}</span>
                     </div>
                         `
                         : ""
@@ -195,10 +202,16 @@ const Map = () => {
           )
           .addTo(map.current!);
 
+        marker.getElement().addEventListener("click", () => {
+          setSelectedOpportunity(opp);
+          // Add any additional click handling logic here
+          console.log("Marker clicked:", opp.title);
+        });
+
         // Add fade-in animation class
         const markerElement = marker.getElement();
         if (markerElement) {
-          markerElement.classList.add('marker-fade-in');
+          markerElement.classList.add("marker-fade-in");
         }
 
         markersRef.current.push(marker);

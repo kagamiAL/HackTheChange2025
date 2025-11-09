@@ -9,18 +9,19 @@ import { OpportunityProvider } from "./context/OpportunityContext";
 import SwipeView from "./components/swipe-view/swipe-view";
 import * as React from "react";
 
-export default function Home({ children }: { children: React.ReactNode }) {
+export default function Home() {
   return (
     <div className="h-screen w-full overflow-hidden bg-zinc-50">
-      <OpportunityProvider>{children}</OpportunityProvider>
-      <main className="h-full w-full">
-        <div className="flex">
-          <div className="z-40 w-[30vw]">
-            <SwipeView />
+      <OpportunityProvider>
+        <main className="h-full w-full">
+          <div className="flex">
+            <div className="z-40 w-[30vw]">
+              <SwipeView />
+            </div>
+            <Map />
           </div>
-          <Map />
-        </div>
-      </main>
+        </main>
+      </OpportunityProvider>
 
       {/* Right Sidebar - Overlaying the map */}
       <div className="absolute top-0 right-0 bottom-0">

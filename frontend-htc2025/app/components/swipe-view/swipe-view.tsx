@@ -3,30 +3,29 @@ import cover from '../../../assets/mountains.jpeg';
 import { useOpportunities } from '@/app/context/OpportunityContext';
 
 export default function SwipeView() {
-  const { opportunities, selectedOpportunity, setSelectedOpportunity } = useOpportunities();
+  const {selectedOpportunity} = useOpportunities();
 
-  const opportunity = selectedOpportunity || opportunities[0];
+  if (!selectedOpportunity) return <p>No opportunity data yet.</p>;
 
-  if (!opportunity) return <p>No opportunity data yet.</p>;
 
   return (
   <div className="max-w max-h-md mx-auto bg-white rounded-xl shadow-lg min-h-[60vh] max-h-[90vh]">
     <img
-      src={opportunity.organization.logo || cover.src}
+      src={selectedOpportunity.organization.logo || cover.src}
       alt="Event Image"
-      className="w-full h-56 object-cover"
+      className="w-full h-56 object-contain"
     />
     <div className="p-6">
       <span className="bg-gray-200 text-gray-900 text-sm font-medium px-3 py-1 rounded-full">
-        {opportunity.organization.name}
+        {selectedOpportunity.organization.name}
       </span>
 
       <h2 className="mt-3 text-2xl font-semibold text-gray-900">
-        {opportunity.title}
+        {selectedOpportunity.title}
       </h2>
       <div className='overflow-y-auto max-h-64'>
         <p className="mt-3 text-gray-700">
-          {opportunity.description}
+          {selectedOpportunity.description}
         </p>
 
       <div className="mt-4 flex flex-col text-gray-500 text-sm space-x-4">
@@ -34,7 +33,7 @@ export default function SwipeView() {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeWidth="2" d="M12 2C8.134 2 5 5.134 5 9c0 7 7 13 7 13s7-6 7-13c0-3.866-3.134-7-7-7z" />
           </svg>
-          <span></span>
+          <span>Locations</span>
         </div>
 
         <div className="flex items-center space-x-1 mt-2">
