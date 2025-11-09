@@ -12,25 +12,24 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 interface VolunteerOpportunity {
   id: number;
-  url: string;
   title: string;
   description: string;
   remote_or_online: boolean;
   organization: {
     name: string;
     logo: string | null;
-    url: string;
+  };
+  audience: {
+    scope: string;
+    longitude?: number;
+    latitude?: number;
   };
   dates: {
     start: string;
     end: string;
   };
   duration: string;
-  audience: {
-    scope: string;
-    longitude?: number;
-    latitude?: number;
-  };
+  url: string;
 }
 
 const Map = () => {
