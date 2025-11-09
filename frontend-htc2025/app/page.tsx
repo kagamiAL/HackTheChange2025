@@ -5,6 +5,7 @@ import { RightSidebar, RightSidebarHeader, RightSidebarContent } from "./compone
 import { LeftSidebar, LeftSidebarHeader, LeftSidebarContent } from "./components/LeftSidebar";
 import { FavoritesList } from "./components/FavoritesList";
 import SwipeView from "./components/SwipeView";
+import { WelcomeModal } from "./components/WelcomeModal";
 import { Heart, Sparkles, MapPin } from "lucide-react";
 import { useOpportunities } from "./context/OpportunityContext";
 
@@ -13,6 +14,7 @@ export default function Home() {
 
   return (
     <div className="w-full h-full overflow-hidden bg-zinc-50 relative">
+      <WelcomeModal />
       {/* Main Map Area */}
       <main className="w-full h-full">
         <Map />

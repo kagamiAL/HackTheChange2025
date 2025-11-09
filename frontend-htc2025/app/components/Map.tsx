@@ -40,78 +40,77 @@ const Map = () => {
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const homeMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const mapLoadedRef = useRef(false);
-  const { setOpportunities, setSelectedOpportunity, selectedOpportunity, maxDistance } = useOpportunities();
+  const { setOpportunities, setSelectedOpportunity, selectedOpportunity, maxDistance } =
+    useOpportunities();
 
-const [is3D, setIs3D] = useState(true);
+  const [is3D, setIs3D] = useState(true);
 
-const setBuildingsVisibility = (mode: "2d" | "3d") => {
-  if (!map.current) return;
-  if (map.current.getLayer("building-2d")) {
-    map.current.setLayoutProperty(
-      "building-2d",
-      "visibility",
-      mode === "2d" ? "visible" : "none"
-    );
-  }
-  if (map.current.getLayer("building-3d")) {
-    map.current.setLayoutProperty(
-      "building-3d",
-      "visibility",
-      mode === "3d" ? "visible" : "none"
-    );
-  }
-};
+  const setBuildingsVisibility = (mode: "2d" | "3d") => {
+    if (!map.current) return;
+    if (map.current.getLayer("building-2d")) {
+      map.current.setLayoutProperty(
+        "building-2d",
+        "visibility",
+        mode === "2d" ? "visible" : "none"
+      );
+    }
+    if (map.current.getLayer("building-3d")) {
+      map.current.setLayoutProperty(
+        "building-3d",
+        "visibility",
+        mode === "3d" ? "visible" : "none"
+      );
+    }
+  };
 
-const enable3D = () => {
-  if (!map.current) return;
-  if (!map.current.getSource("mapbox-dem")) {
-    map.current.addSource("mapbox-dem", {
-      type: "raster-dem",
-      url: "mapbox://mapbox.mapbox-terrain-dem-v1",
-      tileSize: 512,
-      maxzoom: 14,
-    });
-  }
-  map.current.setTerrain({ source: "mapbox-dem", exaggeration: 1.5 });
+  const enable3D = () => {
+    if (!map.current) return;
+    if (!map.current.getSource("mapbox-dem")) {
+      map.current.addSource("mapbox-dem", {
+        type: "raster-dem",
+        url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+        tileSize: 512,
+        maxzoom: 14,
+      });
+    }
+    map.current.setTerrain({ source: "mapbox-dem", exaggeration: 1.5 });
 
-  // Ensure sky exists, then show it
-  if (!map.current.getLayer("sky")) {
-    map.current.addLayer({
-      id: "sky",
-      type: "sky",
-      paint: {
-        "sky-type": "atmosphere",
-        "sky-atmosphere-sun": [0.0, 90.0],
-        "sky-atmosphere-sun-intensity": 10,
-        "sky-atmosphere-color": "#faf5ff",
-        "sky-atmosphere-halo-color": "rgba(248, 209, 255, 0.35)",
-      },
-    });
-  } else {
-    map.current.setLayoutProperty("sky", "visibility", "visible");
-  }
+    // Ensure sky exists, then show it
+    if (!map.current.getLayer("sky")) {
+      map.current.addLayer({
+        id: "sky",
+        type: "sky",
+        paint: {
+          "sky-type": "atmosphere",
+          "sky-atmosphere-sun": [0.0, 90.0],
+          "sky-atmosphere-sun-intensity": 10,
+          "sky-atmosphere-color": "rgba(200, 220, 240, 1)",
+          "sky-atmosphere-halo-color": "rgba(236, 72, 153, 0.3)",
+        },
+      });
+    } else {
+      map.current.setLayoutProperty("sky", "visibility", "visible");
+    }
 
-  setBuildingsVisibility("3d");
-  map.current.setPitch(60);
-  map.current.setBearing(-17.6);
-};
+    setBuildingsVisibility("3d");
+    map.current.setPitch(60);
+    map.current.setBearing(-17.6);
+  };
 
-const enable2D = () => {
-  if (!map.current) return;
-  // Reset camera and terrain
-  map.current.setPitch(0);
-  map.current.setBearing(0);
-  map.current.setTerrain(null);
+  const enable2D = () => {
+    if (!map.current) return;
+    // Reset camera and terrain
+    map.current.setPitch(0);
+    map.current.setBearing(0);
+    map.current.setTerrain(null);
 
-  // Hide sky (safer than removing)
-  if (map.current.getLayer("sky")) {
-    map.current.setLayoutProperty("sky", "visibility", "none");
-  }
+    // Hide sky (safer than removing)
+    if (map.current.getLayer("sky")) {
+      map.current.setLayoutProperty("sky", "visibility", "none");
+    }
 
-  setBuildingsVisibility("2d");
-};
-
-
+    setBuildingsVisibility("2d");
+  };
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
@@ -216,7 +215,7 @@ const enable2D = () => {
     // Add fade-in animation class
     const markerElement = homeMarkerRef.current.getElement();
     if (markerElement) {
-      markerElement.classList.add('marker-fade-in');
+      markerElement.classList.add("marker-fade-in");
     }
   };
 
@@ -258,22 +257,26 @@ const enable2D = () => {
             new mapboxgl.Popup({
               offset: 25,
               maxWidth: "340px",
-              className: "volunteer-popup"
+              className: "volunteer-popup",
             }).setHTML(
               `
               <div class="bg-background rounded-lg overflow-hidden">
                 <div class="bg-gradient-to-r from-violet-500 to-purple-600 h-1.5"></div>
                 <div class="px-4 pt-4 pb-3">
-                  <h3 class="font-semibold text-sm mb-1"><a href="${opp.url}" target="_blank" rel="noopener noreferrer" class="text-violet-700 hover:text-[#ff1493] opp-title-link duration-150">${opp.title}</a></h3>
+                  <h3 class="font-semibold text-sm mb-1"><a href="${
+                    opp.url
+                  }" target="_blank" rel="noopener noreferrer" class="text-violet-700 hover:text-[#ff1493] opp-title-link duration-150">${
+                opp.title
+              }</a></h3>
                 </div>
 
                 ${
                   opp.organization.logo
                     ? `<img src="${opp.organization.logo}" alt="${opp.organization.name}" class="w-full h-40 object-contain bg-muted/30" />`
-                    : ''
+                    : ""
                 }
 
-                <div class="px-4 pb-4 space-y-3 ${opp.organization.logo ? 'pt-3' : ''}">
+                <div class="px-4 pb-4 space-y-3 ${opp.organization.logo ? "pt-3" : ""}">
                   <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -281,7 +284,9 @@ const enable2D = () => {
                     <span>${opp.organization.name}</span>
                   </div>
 
-                  <p class="text-sm text-muted-foreground leading-relaxed line-clamp-3">${opp.description}</p>
+                  <p class="text-sm text-muted-foreground leading-relaxed line-clamp-3">${
+                    opp.description
+                  }</p>
 
                   <div class="flex flex-wrap gap-2 pt-1">
                     ${
@@ -303,7 +308,9 @@ const enable2D = () => {
                       <svg class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span class="text-xs font-medium text-purple-700 dark:text-purple-300">${new Date(opp.dates.start).toLocaleDateString()}</span>
+                      <span class="text-xs font-medium text-purple-700 dark:text-purple-300">${new Date(
+                        opp.dates.start
+                      ).toLocaleDateString()}</span>
                     </div>
                         `
                         : ""
@@ -329,14 +336,14 @@ const enable2D = () => {
           .addTo(map.current!);
 
         // Add click event to marker to select the opportunity in SwipeView
-        marker.getElement().addEventListener('click', () => {
+        marker.getElement().addEventListener("click", () => {
           setSelectedOpportunity(opp);
         });
 
         // Add fade-in animation class
         const markerElement = marker.getElement();
         if (markerElement) {
-          markerElement.classList.add('marker-fade-in');
+          markerElement.classList.add("marker-fade-in");
         }
 
         markersRef.current.push(marker);
@@ -363,6 +370,9 @@ const enable2D = () => {
       });
 
       console.log(`Loaded ${markersRef.current.length} markers from first page`);
+
+      // Update context immediately with first page results so SwipeView can start displaying
+      setOpportunities(fetchedResults);
 
       // Fetch and process remaining pages
       while (data.next) {
@@ -391,12 +401,12 @@ const enable2D = () => {
         console.log(
           `Fetched page, total results: ${fetchedResults.length}, total markers: ${markersRef.current.length}`
         );
+
+        // Update context progressively as each page loads so SwipeView stays in sync
+        setOpportunities(fetchedResults);
       }
 
       console.log(`Fetched all pages, total results: ${fetchedResults.length}`);
-
-      // Update global context with all results
-      setOpportunities(fetchedResults);
 
       if (markersRef.current.length === 0) {
         console.warn("No volunteer opportunities with coordinates found in this area");
@@ -440,10 +450,12 @@ const enable2D = () => {
     <div className="w-full h-full relative">
       <div ref={mapContainer} className="w-full h-full" />
       <LocationSearch onLocationSelect={handleLocationSelect} />
-      <div className="absolute bottom-4 left-4 z-10 w-72 sm:w-80 transition-all duration-300 ease-in-out"
+      <div
+        className="absolute bottom-4 left-4 z-10 w-72 sm:w-80 transition-all duration-300 ease-in-out"
         style={{
-          left: 'calc(max(1rem, env(safe-area-inset-left)) + var(--left-sidebar-width, 0px))'
-        }}>
+          left: "calc(max(1rem, env(safe-area-inset-left)) + var(--left-sidebar-width, 0px))",
+        }}
+      >
         <DistanceSlider />
       </div>
       <div className="absolute bottom-4 right-4 z-10 pointer-events-none">

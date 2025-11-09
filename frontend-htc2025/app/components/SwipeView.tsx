@@ -3,11 +3,12 @@
 import * as React from "react";
 import { useState, useRef } from "react";
 import { useOpportunities } from "@/app/context/OpportunityContext";
+import { useFavorites } from "@/app/context/FavoritesContext";
 
 export default function SwipeView() {
   const { opportunities, selectedOpportunity, setSelectedOpportunity, hideRemoteOpportunities } = useOpportunities();
+  const { addFavorite } = useFavorites();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [favorites, setFavorites] = useState<number[]>([]);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
@@ -105,7 +106,9 @@ export default function SwipeView() {
   };
 
   const handleSave = () => {
-    setFavorites([...favorites, currentOpportunity.id]);
+    // Add to favorites
+    addFavorite(currentOpportunity);
+
     if (currentIndex < filteredOpportunities.length - 1) {
       animateCardOut('right', () => {
         setCurrentIndex(currentIndex + 1);
