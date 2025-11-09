@@ -1,59 +1,22 @@
 "use client";
 
-import {
-  ChangeEvent,
-  FormEvent,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  User,
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-} from "firebase/auth";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import type { User } from "firebase/auth";
 import { Loader2, RefreshCw } from "lucide-react";
 
 import { Button } from "@/app/components/ui/button";
 import { FriendsList, FriendsStatus } from "@/app/components/FriendsList";
 import { Input } from "@/components/ui/input";
-import { getFirebaseAuth } from "@/lib/firebase";
+import {
+  AuthActionError,
+  AuthMode,
+  backendBaseUrl,
+  useAuth,
+} from "@/app/context/AuthContext";
 import { cn } from "@/lib/utils";
 import type { Friend, FriendsResponse } from "@/app/types/friend";
 
-const backendBaseUrl = (() => {
-  const fromEnv =
-    process.env.NEXT_PUBLIC_BACKEND_API_URL ??
-    process.env.BACKEND_API_URL ??
-    "";
-  if (!fromEnv) {
-    return "";
-  }
-  return fromEnv.endsWith("/") ? fromEnv.slice(0, -1) : fromEnv;
-})();
 
-const hasBackendConfigured = Boolean(backendBaseUrl);
-
-type AuthMode = "login" | "signup";
-type BackendStatus =
-  | { state: "idle" }
-  | { state: "syncing" }
-  | { state: "success" };
-
-interface BackendUserPayload {
-  id: number;
-  email: string;
-  full_name?: string | null;
-  is_active: boolean;
-}
-
-interface AuthResponsePayload {
-  user: BackendUserPayload;
-  is_new_user?: boolean;
-}
 
 interface PendingFriendRequest {
   id: number;
@@ -90,74 +53,6 @@ async function extractMessageFromResponse(
   }
 
   return fallback;
-}
-
-async function syncBackendWithAuth(
-  mode: AuthMode,
-  user: User,
-  fullName?: string
-): Promise<AuthResponsePayload> {
-  if (!backendBaseUrl) {
-    throw new Error(
-      "BACKEND_API_URL is not configured. Set NEXT_PUBLIC_BACKEND_API_URL (or BACKEND_API_URL) before logging in."
-    );
-  }
-
-  const endpoint = `${backendBaseUrl}/auth/${
-    mode === "signup" ? "signup" : "login"
-  }`;
-  const idToken = await user.getIdToken();
-
-  const payload: Record<string, string> = {
-    id_token: idToken,
-  };
-
-  if (mode === "signup") {
-    if (!fullName?.trim()) {
-      throw new Error("A full name is required to finish signing up.");
-    }
-    payload.full_name = fullName.trim();
-  }
-
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
-    },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    let message = "Backend authentication failed.";
-    try {
-      const data = await response.json();
-      if (typeof data?.message === "string") {
-        message = data.message;
-      }
-    } catch {
-      const fallback = await response.text();
-      if (fallback) {
-        message = fallback;
-      }
-    }
-    throw new Error(message);
-  }
-
-  try {
-    const data = (await response.json()) as AuthResponsePayload;
-    if (!data?.user) {
-      throw new Error("Backend response is missing the user payload.");
-    }
-    return data;
-  } catch (error) {
-    throw new Error(
-      error instanceof Error
-        ? error.message
-        : "Unable to parse backend authentication response."
-    );
-  }
 }
 
 async function fetchFriendsFromBackend(user: User): Promise<Friend[]> {
@@ -246,25 +141,26 @@ async function fetchPendingRequestsFromBackend(user: User): Promise<PendingFrien
 }
 
 export function FriendsPanel() {
-  const auth = useMemo(() => getFirebaseAuth(), []);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [formValues, setFormValues] = useState({
     email: "",
     password: "",
     fullName: "",
   });
-  const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [initializing, setInitializing] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
-  const [backendStatus, setBackendStatus] = useState<BackendStatus>({
-    state: "idle",
-  });
-  const [backendError, setBackendError] = useState<string | null>(null);
-  const [backendAuth, setBackendAuth] = useState<{
-    user: BackendUserPayload;
-    isNewUser: boolean;
-  } | null>(null);
+  const {
+    user,
+    backendAuth,
+    backendStatus,
+    backendError,
+    initializing,
+    login,
+    signup,
+    logout,
+    retryBackendSync,
+    hasBackendConfigured,
+  } = useAuth();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [friendsStatus, setFriendsStatus] = useState<FriendsStatus>("idle");
   const [friendsError, setFriendsError] = useState<string | null>(null);
@@ -290,64 +186,8 @@ export function FriendsPanel() {
       }
     | null
   >(null);
-  const backendSyncInFlight = useRef(false);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
-      setUser(nextUser);
-      setInitializing(false);
-    });
-
-    return unsubscribe;
-  }, [auth]);
 
   const isSyncingBackend = backendStatus.state === "syncing";
-
-  useEffect(() => {
-    if (
-      !hasBackendConfigured ||
-      !user ||
-      backendAuth ||
-      backendSyncInFlight.current
-    ) {
-      return;
-    }
-
-    backendSyncInFlight.current = true;
-    setBackendStatus({ state: "syncing" });
-    setBackendError(null);
-
-    let isMounted = true;
-
-    syncBackendWithAuth("login", user)
-      .then((data) => {
-        if (!isMounted) {
-          return;
-        }
-        setBackendStatus({ state: "success" });
-        setBackendAuth({
-          user: data.user,
-          isNewUser: Boolean(data.is_new_user),
-        });
-      })
-      .catch((err) => {
-        if (!isMounted) {
-          return;
-        }
-        const message =
-          err instanceof Error ? err.message : "Unable to reach the backend.";
-        setBackendError(message);
-        setBackendStatus({ state: "idle" });
-        setBackendAuth(null);
-      })
-      .finally(() => {
-        backendSyncInFlight.current = false;
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [backendAuth, user]);
 
   useEffect(() => {
     if (!backendAuth) {
@@ -471,50 +311,25 @@ export function FriendsPanel() {
 
     setIsSubmitting(true);
     setFormError(null);
-    setBackendError(null);
-
-    let createdUser: User | null = null;
 
     try {
       if (authMode === "login") {
-        const credentials = await signInWithEmailAndPassword(
-          auth,
-          formValues.email,
-          formValues.password
-        );
-        createdUser = credentials.user;
+        await login(formValues.email, formValues.password);
       } else {
-        const credentials = await createUserWithEmailAndPassword(
-          auth,
+        await signup(
           formValues.email,
-          formValues.password
+          formValues.password,
+          formValues.fullName.trim(),
         );
-        createdUser = credentials.user;
       }
-
-      setBackendStatus({ state: "syncing" });
-
-      const data = await syncBackendWithAuth(
-        authMode,
-        createdUser,
-        authMode === "signup" ? formValues.fullName : undefined
-      );
-
-      setBackendAuth({
-        user: data.user,
-        isNewUser: Boolean(data.is_new_user),
-      });
-      setBackendStatus({ state: "success" });
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Unable to finish authentication.";
-      if (createdUser) {
-        setBackendError(message);
+      if (err instanceof AuthActionError && err.kind === "backend") {
+        setFormError(null);
       } else {
         setFormError(message);
       }
-      setBackendStatus({ state: "idle" });
-      setBackendAuth(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -523,42 +338,26 @@ export function FriendsPanel() {
   const handleSignOut = async () => {
     setIsSubmitting(true);
     setFormError(null);
-    setBackendError(null);
-
     try {
-      await signOut(auth);
-      setBackendStatus({ state: "idle" });
-      setBackendError(null);
-      setBackendAuth(null);
+      await logout();
     } catch (err) {
       setFormError(
-        err instanceof Error ? err.message : "Unable to sign out right now."
+        err instanceof Error ? err.message : "Unable to sign out right now.",
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const retryBackendSync = async () => {
-    if (!user) {
-      return;
-    }
-
-    setBackendError(null);
-    setBackendStatus({ state: "syncing" });
-
+  const handleRetryBackendSync = async () => {
     try {
-      const data = await syncBackendWithAuth("login", user);
-      setBackendStatus({ state: "success" });
-      setBackendAuth({
-        user: data.user,
-        isNewUser: Boolean(data.is_new_user),
-      });
+      await retryBackendSync();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Unable to reach the backend.";
-      setBackendError(message);
-      setBackendStatus({ state: "idle" });
+      if (!(err instanceof AuthActionError && err.kind === "backend")) {
+        setFormError(
+          err instanceof Error ? err.message : "Unable to retry sync right now.",
+        );
+      }
     }
   };
 
@@ -990,7 +789,7 @@ export function FriendsPanel() {
               size="sm"
               variant="outline"
               className="mt-3 gap-1.5"
-              onClick={retryBackendSync}
+              onClick={handleRetryBackendSync}
               disabled={isSubmitting || isSyncingBackend}
             >
               <RefreshCw className="h-4 w-4" />
