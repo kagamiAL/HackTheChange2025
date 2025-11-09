@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.engine import Row
 from typing import Sequence
 from sqlalchemy import select, or_, and_
 from app.models.user import User
@@ -128,3 +129,22 @@ class FriendsService:
         friends = result.scalars().all()
 
         return friends
+
+    async def get_pending_friend_requests(
+        self, user: User
+    ) -> Sequence[Row[tuple[FriendRequest, User]]]:
+        """Return pending friend requests with sender metadata."""
+        stmt = (
+            select(FriendRequest, User)
+            .join(User, FriendRequest.sender_id == User.id)
+            .where(
+                and_(
+                    FriendRequest.receiver_id == user.id,
+                    FriendRequest.status == Friend_Request_Status.pending,
+                )
+            )
+        )
+        result = await self._session.execute(stmt)
+        pending_requests = result.all()
+
+        return pending_requests
