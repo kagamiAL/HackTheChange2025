@@ -11,3 +11,7 @@ wheels/
 *.md
 .env
 .*
+tmp/
+scripts/
+*.json
+requests/
