@@ -364,6 +364,9 @@ const enable2D = () => {
 
       console.log(`Loaded ${markersRef.current.length} markers from first page`);
 
+      // Update context immediately with first page results so SwipeView can start displaying
+      setOpportunities(fetchedResults);
+
       // Fetch and process remaining pages
       while (data.next) {
         console.log("Fetching next page:", data.next);
@@ -391,12 +394,12 @@ const enable2D = () => {
         console.log(
           `Fetched page, total results: ${fetchedResults.length}, total markers: ${markersRef.current.length}`
         );
+
+        // Update context progressively as each page loads so SwipeView stays in sync
+        setOpportunities(fetchedResults);
       }
 
       console.log(`Fetched all pages, total results: ${fetchedResults.length}`);
-
-      // Update global context with all results
-      setOpportunities(fetchedResults);
 
       if (markersRef.current.length === 0) {
         console.warn("No volunteer opportunities with coordinates found in this area");
