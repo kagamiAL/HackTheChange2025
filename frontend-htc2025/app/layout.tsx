@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AppHeaderWrapper } from "@/app/components/AppHeaderWrapper";
 import { OpportunityProvider } from "@/app/context/OpportunityContext";
 import { FavoritesProvider } from "@/app/context/FavoritesContext";
+import { AuthProvider } from "@/app/context/AuthContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,12 +31,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-hidden h-screen flex flex-col`}
       >
-        <OpportunityProvider>
-          <FavoritesProvider>
-            <AppHeaderWrapper />
-            {children}
-          </FavoritesProvider>
-        </OpportunityProvider>
+        <AuthProvider>
+          <OpportunityProvider>
+            <FavoritesProvider>
+              <AppHeaderWrapper />
+              {children}
+            </FavoritesProvider>
+          </OpportunityProvider>
+        </AuthProvider>
       </body>
     </html>
   );
